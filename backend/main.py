@@ -6,6 +6,8 @@ from pymongo.database import Database
 
 import schemas
 from database import get_db
+import auth
+from datetime import timedelta
 
 app = FastAPI()
 
@@ -28,6 +30,44 @@ def create_item(item: schemas.ItemCreate, db: Database = Depends(get_db)):
     result = db["items"].insert_one(item_dict)
     item_dict["_id"] = result.inserted_id
     return fix_id(item_dict)
+
+@app.post("/auth/register", response_model=schemas.Token)
+def register(user: schemas.UserCreate, db: Database = Depends(get_db)):
+    existing_user = db["users"].find_one({"email": user.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_password = auth.get_password_hash(user.password)
+    user_dict = user.model_dump()
+    user_dict["hashed_password"] = hashed_password
+    del user_dict["password"]
+    
+    result = db["users"].insert_one(user_dict)
+    user_dict["_id"] = result.inserted_id
+    
+    user_out = schemas.User(**fix_id(user_dict))
+    
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user_out.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "user": user_out}
+
+@app.post("/auth/login", response_model=schemas.Token)
+def login(user: schemas.UserLogin, db: Database = Depends(get_db)):
+    db_user = db["users"].find_one({"email": user.email})
+    if not db_user or not auth.verify_password(user.password, db_user["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+        
+    user_out = schemas.User(**fix_id(db_user))
+    
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user_out.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "user": user_out}
+
+
 
 @app.get("/items/", response_model=List[schemas.Item])
 def read_items(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):

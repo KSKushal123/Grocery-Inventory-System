@@ -6,7 +6,7 @@ class ItemBase(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     quantity: int
-    price: float
+    price: int
     image: Optional[str] = None
 
 class ItemCreate(ItemBase):
@@ -64,3 +64,26 @@ class BusinessOwner(BusinessOwnerBase):
     id: str
     
     model_config = ConfigDict(populate_by_name=True)
+
+class UserBase(BaseModel):
+    email: str
+    name: str
+
+class UserCreate(UserBase):
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class User(UserBase):
+    id: str
+    
+    model_config = ConfigDict(populate_by_name=True)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: User
+
+

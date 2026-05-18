@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Trash2, Edit, DollarSign, Archive, BarChart2, User, MapPin, Mail, Phone, Award, Search, Filter, Tag, Upload } from 'lucide-react';
+import { Package, Plus, Trash2, Edit, IndianRupee, Archive, BarChart2, User, MapPin, Mail, Phone, Award, Search, Filter, Tag, Upload } from 'lucide-react';
 import * as api from '../api';
 
 function Inventory() {
@@ -178,10 +178,10 @@ function Inventory() {
           </div>
         </div>
         <div className="glass-panel stat-card">
-          <div className="stat-icon"><DollarSign size={24} /></div>
+          <div className="stat-icon"><IndianRupee size={24} /></div>
           <div className="stat-info">
             <h3>Total Inventory Value</h3>
-            <p>${totalValue.toFixed(2)}</p>
+            <p>₹{totalValue}</p>
           </div>
         </div>
       </div>
@@ -270,13 +270,13 @@ function Inventory() {
                 />
               </div>
               <div>
-                <label>Price ($)</label>
+                <label>Price (₹)</label>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   className="form-control"
                   value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => setFormData({...formData, price: parseInt(e.target.value, 10) || 0})}
                   required
                   min="0"
                 />
@@ -388,7 +388,7 @@ function Inventory() {
                         )}
                       </td>
                       <td style={{ fontWeight: '600' }}>{item.quantity}</td>
-                      <td>${item.price.toFixed(2)}</td>
+                      <td>₹{item.price}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button className="btn-icon" onClick={() => handleEdit(item)} title="Edit">
