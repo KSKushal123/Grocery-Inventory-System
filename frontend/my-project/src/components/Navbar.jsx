@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Package, User, Store } from 'lucide-react';
+import { Package, User, Store, Users } from 'lucide-react';
 
 function Navbar() {
   return (
@@ -19,6 +19,10 @@ function Navbar() {
         <NavLink to="/shops" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <Store size={18} />
           Surrounding Shops
+        </NavLink>
+        <NavLink to="/owners" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <Users size={18} />
+          Business Owners
         </NavLink>
       </div>
     </nav>

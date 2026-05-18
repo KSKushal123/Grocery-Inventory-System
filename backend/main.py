@@ -85,3 +85,15 @@ def create_shop(shop: schemas.ShopCreate, db: Database = Depends(get_db)):
 def read_shops(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
     shops = list(db["shops"].find().skip(skip).limit(limit))
     return [fix_id(s) for s in shops]
+
+@app.post("/business_owners/", response_model=schemas.BusinessOwner)
+def create_business_owner(owner: schemas.BusinessOwnerCreate, db: Database = Depends(get_db)):
+    owner_dict = owner.model_dump()
+    result = db["business_owners"].insert_one(owner_dict)
+    owner_dict["_id"] = result.inserted_id
+    return fix_id(owner_dict)
+
+@app.get("/business_owners/", response_model=List[schemas.BusinessOwner])
+def read_business_owners(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
+    owners = list(db["business_owners"].find().skip(skip).limit(limit))
+    return [fix_id(o) for o in owners]

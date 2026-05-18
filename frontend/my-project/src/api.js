@@ -12,3 +12,6 @@ export const createDistributor = (distributor) => axios.post(`${API_URL}/distrib
 
 export const getShops = () => axios.get(`${API_URL}/shops/`);
 export const createShop = (shop) => axios.post(`${API_URL}/shops/`, shop);
+
+export const getBusinessOwners = () => axios.get(`${API_URL}/business_owners/`);
+export const createBusinessOwner = (owner) => axios.post(`${API_URL}/business_owners/`, owner);
