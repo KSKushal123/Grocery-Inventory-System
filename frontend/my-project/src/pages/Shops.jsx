@@ -118,7 +118,7 @@ function Shops() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', color: '#cbd5e1', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--text-color)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
               {isEditing ? (
                 <>
                   <input type="text" className="form-control" style={{ padding: '0.25rem 0.5rem' }} value={shop.address} onChange={e => handleEditChange(shop.id, 'address', e.target.value)} placeholder="Address" />
@@ -129,15 +129,15 @@ function Shops() {
               ) : (
                 <>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                    <Map size={16} style={{ marginTop: '0.2rem', color: '#94a3b8' }} />
+                    <Map size={16} style={{ marginTop: '0.2rem', color: '#64748b' }} />
                     <span>{shop.address}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Phone size={16} style={{ color: '#94a3b8' }} />
+                    <Phone size={16} style={{ color: '#64748b' }} />
                     <span>{shop.contact}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#34d399', fontWeight: 'bold' }}>
-                    <Navigation size={16} style={{ color: '#94a3b8' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#059669', fontWeight: 'bold' }}>
+                    <Navigation size={16} style={{ color: '#64748b' }} />
                     <span>{shop.distance} away</span>
                   </div>
                 </>
@@ -146,7 +146,7 @@ function Shops() {
 
             {!isEditing && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
-                <span style={{ fontSize: '0.85rem', color: shop.status.includes('Open') ? '#34d399' : '#94a3b8' }}>
+                <span style={{ fontSize: '0.85rem', color: shop.status.includes('Open') ? '#059669' : '#64748b', fontWeight: '600' }}>
                   {shop.status}
                 </span>
                 <button className="btn-icon" title="Get Directions" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary-color)' }}>
@@ -154,6 +154,7 @@ function Shops() {
                 </button>
               </div>
             )}
+
           </div>
           );
         })}
@@ -162,7 +163,7 @@ function Shops() {
       <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
         <Map size={48} style={{ margin: '0 auto 1rem', color: '#3b82f6', opacity: 0.8 }} />
         <h2 style={{ marginBottom: '1rem' }}>Interactive District Map</h2>
-        <p style={{ color: '#94a3b8', marginBottom: '1.5rem', maxWidth: '500px', margin: '0 auto 1.5rem' }}>
+        <p style={{ color: '#475569', marginBottom: '1.5rem', maxWidth: '500px', margin: '0 auto 1.5rem' }}>
           View real-time inventory sharing status, competitor pricing, and optimized delivery routes in your district.
         </p>
         <button className="btn btn-primary">

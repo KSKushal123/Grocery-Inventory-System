@@ -93,15 +93,15 @@ function DistributorProfile() {
                   {distributor.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div style={{ paddingRight: '2rem' }}>
-                  <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{distributor.name}</h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#34d399', fontSize: '0.9rem' }}>
+                  <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: 'var(--text-color)' }}>{distributor.name}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontSize: '0.9rem', fontWeight: '600' }}>
                     <ShieldCheck size={16} />
                     {distributor.status}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gap: '1rem', color: '#cbd5e1' }}>
+              <div style={{ display: 'grid', gap: '1rem', color: 'var(--text-color)', fontSize: '0.95rem' }}>
                 {isEditing ? (
                   <div style={{ display: 'grid', gap: '0.75rem' }}>
                     <input type="text" className="form-control" style={{ padding: '0.5rem' }} value={distributor.name} onChange={e => handleEditChange(distributor.id, 'name', e.target.value)} placeholder="Company Name" />
@@ -133,22 +133,23 @@ function DistributorProfile() {
               </div>
 
               <div className="stats-container" style={{ marginBottom: 0, marginTop: '1rem' }}>
-                <div className="stat-card" style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '1rem', borderRadius: '12px', flex: 1 }}>
+                <div className="stat-card" style={{ background: 'rgba(15, 23, 42, 0.04)', padding: '1rem', borderRadius: '12px', flex: 1, border: '1px solid rgba(15, 23, 42, 0.05)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fbbf24', marginBottom: '0.5rem' }}>
                     <Star size={18} fill="currentColor" />
-                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'white' }}>{distributor.rating}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-color)' }}>{distributor.rating}</span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Supplier Rating</div>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: '500' }}>Supplier Rating</div>
                 </div>
-                <div className="stat-card" style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '1rem', borderRadius: '12px', flex: 1 }}>
+                <div className="stat-card" style={{ background: 'rgba(15, 23, 42, 0.04)', padding: '1rem', borderRadius: '12px', flex: 1, border: '1px solid rgba(15, 23, 42, 0.05)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3b82f6', marginBottom: '0.5rem' }}>
                     <Truck size={18} />
-                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'white' }}>{distributor.totalDeliveries}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-color)' }}>{distributor.totalDeliveries}</span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Total Deliveries</div>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: '500' }}>Total Deliveries</div>
                 </div>
               </div>
             </div>
+
             );
           })}
         </div>

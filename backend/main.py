@@ -114,8 +114,8 @@ def google_auth(request_data: schemas.GoogleLoginRequest, db: Database = Depends
 
 
 @app.get("/items/", response_model=List[schemas.Item])
-def read_items(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
-    items = list(db["items"].find().skip(skip).limit(limit))
+def read_items(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
+    items = list(db["items"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(item) for item in items]
 
 @app.delete("/items/{item_id}")
@@ -154,8 +154,8 @@ def create_distributor(distributor: schemas.DistributorCreate, db: Database = De
     return fix_id(dist_dict)
 
 @app.get("/distributors/", response_model=List[schemas.Distributor])
-def read_distributors(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
-    distributors = list(db["distributors"].find().skip(skip).limit(limit))
+def read_distributors(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
+    distributors = list(db["distributors"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(d) for d in distributors]
 
 @app.post("/shops/", response_model=schemas.Shop)
@@ -166,8 +166,8 @@ def create_shop(shop: schemas.ShopCreate, db: Database = Depends(get_db)):
     return fix_id(shop_dict)
 
 @app.get("/shops/", response_model=List[schemas.Shop])
-def read_shops(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
-    shops = list(db["shops"].find().skip(skip).limit(limit))
+def read_shops(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
+    shops = list(db["shops"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(s) for s in shops]
 
 @app.post("/business_owners/", response_model=schemas.BusinessOwner)
@@ -178,6 +178,6 @@ def create_business_owner(owner: schemas.BusinessOwnerCreate, db: Database = Dep
     return fix_id(owner_dict)
 
 @app.get("/business_owners/", response_model=List[schemas.BusinessOwner])
-def read_business_owners(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
-    owners = list(db["business_owners"].find().skip(skip).limit(limit))
+def read_business_owners(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
+    owners = list(db["business_owners"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(o) for o in owners]

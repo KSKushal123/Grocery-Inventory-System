@@ -61,8 +61,8 @@ function BusinessOwner() {
               </div>
             ) : (
               <>
-                <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem', color: '#f8fafc' }}>{owner.name}</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#34d399', fontSize: '1.1rem', fontWeight: '500' }}>
+                <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem', color: 'var(--text-color)' }}>{owner.name}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontSize: '1.1rem', fontWeight: '500' }}>
                   <Briefcase size={18} /> {owner.role}
                 </div>
               </>
@@ -70,15 +70,15 @@ function BusinessOwner() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', color: '#cbd5e1', fontSize: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', color: 'var(--text-color)', fontSize: '1rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 style={{ color: '#f8fafc', fontSize: '1.2rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Contact Info</h3>
+            <h3 style={{ color: 'var(--text-color)', fontSize: '1.2rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Contact Info</h3>
             
             {isEditing ? (
               <>
-                <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Email</label><input type="email" className="form-control" value={owner.email} onChange={e => handleEditChange('email', e.target.value)} placeholder="Email" /></div>
-                <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Phone</label><input type="text" className="form-control" value={owner.phone} onChange={e => handleEditChange('phone', e.target.value)} placeholder="Phone" /></div>
-                <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Address</label><input type="text" className="form-control" value={owner.address} onChange={e => handleEditChange('address', e.target.value)} placeholder="Address" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Email</label><input type="email" className="form-control" value={owner.email} onChange={e => handleEditChange('email', e.target.value)} placeholder="Email" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Phone</label><input type="text" className="form-control" value={owner.phone} onChange={e => handleEditChange('phone', e.target.value)} placeholder="Phone" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Address</label><input type="text" className="form-control" value={owner.address} onChange={e => handleEditChange('address', e.target.value)} placeholder="Address" /></div>
               </>
             ) : (
               <>
@@ -99,32 +99,33 @@ function BusinessOwner() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 style={{ color: '#f8fafc', fontSize: '1.2rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Business Info</h3>
+            <h3 style={{ color: 'var(--text-color)', fontSize: '1.2rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Business Info</h3>
             
             {isEditing ? (
               <>
-                <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Company</label><input type="text" className="form-control" value={owner.company} onChange={e => handleEditChange('company', e.target.value)} placeholder="Company Name" /></div>
-                <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Number of Stores</label><input type="number" className="form-control" value={owner.storesCount} onChange={e => handleEditChange('storesCount', parseInt(e.target.value) || 0)} placeholder="Stores" /></div>
-                <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Status</label><input type="text" className="form-control" value={owner.status} onChange={e => handleEditChange('status', e.target.value)} placeholder="Status" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Company</label><input type="text" className="form-control" value={owner.company} onChange={e => handleEditChange('company', e.target.value)} placeholder="Company Name" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Number of Stores</label><input type="number" className="form-control" value={owner.storesCount} onChange={e => handleEditChange('storesCount', parseInt(e.target.value) || 0)} placeholder="Stores" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Status</label><input type="text" className="form-control" value={owner.status} onChange={e => handleEditChange('status', e.target.value)} placeholder="Status" /></div>
               </>
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <Building size={18} style={{ color: '#3b82f6' }} />
-                  <span style={{ fontWeight: 'bold', color: 'white' }}>{owner.company}</span>
+                  <span style={{ fontWeight: 'bold', color: 'var(--text-color)' }}>{owner.company}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>
                     {owner.storesCount} Store{owner.storesCount !== 1 ? 's' : ''} in Network
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#34d399' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#059669' }}>
                   <Award size={18} />
                   <span>{owner.status}</span>
                 </div>
               </>
             )}
           </div>
+
         </div>
       </div>
     </div>

@@ -147,18 +147,19 @@ function Inventory() {
             </div>
           ) : (
             <div style={{ textAlign: 'left' }}>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f8fafc' }}>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)' }}>
                 {ownerProfile.name} <Award size={18} style={{ color: '#3b82f6' }} />
               </h2>
-              <div style={{ color: '#34d399', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '600' }}>
+              <div style={{ color: '#059669', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '600' }}>
                 {ownerProfile.role}
               </div>
-              <div style={{ display: 'flex', gap: '1rem', color: '#94a3b8', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '1rem', color: '#475569', fontSize: '0.85rem', flexWrap: 'wrap' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Mail size={12} /> {ownerProfile.email}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Phone size={12} /> {ownerProfile.phone}</span>
               </div>
             </div>
           )}
+
         </div>
       </header>
 
