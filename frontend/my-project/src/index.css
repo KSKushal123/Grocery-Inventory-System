@@ -21,7 +21,7 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: var(--bg-color);
   background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.04), transparent 35%),
-                    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04), transparent 35%);
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04), transparent 35%);
   color: var(--text-color);
   min-height: 100vh;
   line-height: 1.5;
@@ -64,16 +64,16 @@ header p {
   border-radius: 20px;
   padding: 2.25rem;
   box-shadow: var(--glass-shadow);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel:hover {
   transform: translateY(-4px);
   border-color: rgba(59, 130, 246, 0.15);
-  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.12), 
-              0 0 0 1px rgba(59, 130, 246, 0.05);
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(59, 130, 246, 0.05);
 }
 
 /* Form Styles */
@@ -256,6 +256,7 @@ tbody tr:hover td {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -263,12 +264,19 @@ tbody tr:hover td {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-fade-in {
@@ -350,7 +358,8 @@ tbody tr:hover td {
   gap: 0.5rem;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
   background: rgba(59, 130, 246, 0.08);
   color: var(--primary-color);
 }
