@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class ItemBase(BaseModel):
@@ -11,10 +11,9 @@ class ItemCreate(ItemBase):
     pass
 
 class Item(ItemBase):
-    id: int
-
-    class Config:
-        from_attributes = True
+    id: str
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 class DistributorBase(BaseModel):
     name: str
@@ -27,10 +26,9 @@ class DistributorCreate(DistributorBase):
     pass
 
 class Distributor(DistributorBase):
-    id: int
-
-    class Config:
-        from_attributes = True
+    id: str
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 class ShopBase(BaseModel):
     name: str
@@ -43,7 +41,6 @@ class ShopCreate(ShopBase):
     pass
 
 class Shop(ShopBase):
-    id: int
-
-    class Config:
-        from_attributes = True
+    id: str
+    
+    model_config = ConfigDict(populate_by_name=True)

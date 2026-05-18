@@ -1,13 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
+from bson.objectid import ObjectId
+from pymongo.database import Database
 
-import models
 import schemas
-from database import engine, get_db
-
-models.Base.metadata.create_all(bind=engine)
+from database import get_db
 
 app = FastAPI()
 
@@ -19,61 +17,71 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def fix_id(doc):
+    if doc:
+        doc["id"] = str(doc.pop("_id"))
+    return doc
+
 @app.post("/items/", response_model=schemas.Item)
-def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
-    db_item = models.Item(**item.model_dump())
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
+def create_item(item: schemas.ItemCreate, db: Database = Depends(get_db)):
+    item_dict = item.model_dump()
+    result = db["items"].insert_one(item_dict)
+    item_dict["_id"] = result.inserted_id
+    return fix_id(item_dict)
 
 @app.get("/items/", response_model=List[schemas.Item])
-def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    items = db.query(models.Item).offset(skip).limit(limit).all()
-    return items
+def read_items(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
+    items = list(db["items"].find().skip(skip).limit(limit))
+    return [fix_id(item) for item in items]
 
 @app.delete("/items/{item_id}")
-def delete_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if item is None:
+def delete_item(item_id: str, db: Database = Depends(get_db)):
+    try:
+        obj_id = ObjectId(item_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+    
+    result = db["items"].delete_one({"_id": obj_id})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
-    db.delete(item)
-    db.commit()
     return {"message": "Item deleted"}
 
 @app.put("/items/{item_id}", response_model=schemas.Item)
-def update_item(item_id: int, item_update: schemas.ItemCreate, db: Session = Depends(get_db)):
-    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    for key, value in item_update.model_dump().items():
-        setattr(db_item, key, value)
+def update_item(item_id: str, item_update: schemas.ItemCreate, db: Database = Depends(get_db)):
+    try:
+        obj_id = ObjectId(item_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
         
-    db.commit()
-    db.refresh(db_item)
-    return db_item
+    update_data = item_update.model_dump()
+    result = db["items"].update_one({"_id": obj_id}, {"$set": update_data})
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    updated_item = db["items"].find_one({"_id": obj_id})
+    return fix_id(updated_item)
 
 @app.post("/distributors/", response_model=schemas.Distributor)
-def create_distributor(distributor: schemas.DistributorCreate, db: Session = Depends(get_db)):
-    db_distributor = models.Distributor(**distributor.model_dump())
-    db.add(db_distributor)
-    db.commit()
-    db.refresh(db_distributor)
-    return db_distributor
+def create_distributor(distributor: schemas.DistributorCreate, db: Database = Depends(get_db)):
+    dist_dict = distributor.model_dump()
+    result = db["distributors"].insert_one(dist_dict)
+    dist_dict["_id"] = result.inserted_id
+    return fix_id(dist_dict)
 
 @app.get("/distributors/", response_model=List[schemas.Distributor])
-def read_distributors(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return db.query(models.Distributor).offset(skip).limit(limit).all()
+def read_distributors(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
+    distributors = list(db["distributors"].find().skip(skip).limit(limit))
+    return [fix_id(d) for d in distributors]
 
 @app.post("/shops/", response_model=schemas.Shop)
-def create_shop(shop: schemas.ShopCreate, db: Session = Depends(get_db)):
-    db_shop = models.Shop(**shop.model_dump())
-    db.add(db_shop)
-    db.commit()
-    db.refresh(db_shop)
-    return db_shop
+def create_shop(shop: schemas.ShopCreate, db: Database = Depends(get_db)):
+    shop_dict = shop.model_dump()
+    result = db["shops"].insert_one(shop_dict)
+    shop_dict["_id"] = result.inserted_id
+    return fix_id(shop_dict)
 
 @app.get("/shops/", response_model=List[schemas.Shop])
-def read_shops(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return db.query(models.Shop).offset(skip).limit(limit).all()
+def read_shops(skip: int = 0, limit: int = 100, db: Database = Depends(get_db)):
+    shops = list(db["shops"].find().skip(skip).limit(limit))
+    return [fix_id(s) for s in shops]
