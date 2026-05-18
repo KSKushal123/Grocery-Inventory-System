@@ -86,4 +86,7 @@ class Token(BaseModel):
     token_type: str
     user: User
 
+class GoogleLoginRequest(BaseModel):
+    token: str
+
 

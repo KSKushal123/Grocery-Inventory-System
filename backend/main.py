@@ -3,6 +3,8 @@ from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from bson.objectid import ObjectId
 from pymongo.database import Database
+import urllib.request
+import json
 
 import schemas
 from database import get_db
@@ -61,6 +63,48 @@ def login(user: schemas.UserLogin, db: Database = Depends(get_db)):
         
     user_out = schemas.User(**fix_id(db_user))
     
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user_out.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "user": user_out}
+
+@app.post("/auth/google", response_model=schemas.Token)
+def google_auth(request_data: schemas.GoogleLoginRequest, db: Database = Depends(get_db)):
+    token = request_data.token
+    # Verify the Google ID Token via Google's tokeninfo API
+    url = f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            google_info = json.loads(response.read().decode())
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Google token or verification failed")
+
+    # Ensure the token has an email
+    email = google_info.get("email")
+    name = google_info.get("name", email.split("@")[0] if email else "Google User")
+    
+    if not email:
+        raise HTTPException(status_code=400, detail="Google token does not contain email")
+        
+    # Check if user already exists
+    db_user = db["users"].find_one({"email": email})
+    
+    if not db_user:
+        # Create a new user since they logged in via Google for the first time
+        user_dict = {
+            "email": email,
+            "name": name,
+            "hashed_password": "",  # Google users don't use standard password auth
+        }
+        result = db["users"].insert_one(user_dict)
+        user_dict["_id"] = result.inserted_id
+        db_user = user_dict
+        
+    user_out = schemas.User(**fix_id(db_user))
+    
+    # Generate access token
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user_out.email}, expires_delta=access_token_expires

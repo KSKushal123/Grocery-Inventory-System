@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Mail, Lock, User, Eye, EyeOff, ShoppingCart, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
@@ -91,7 +92,28 @@ const Login = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
 
+    try {
+      const res = await axios.post(`${API_URL}/auth/google`, {
+        token: credentialResponse.credential,
+      });
+      login(res.data.access_token, res.data.user);
+      setSuccess('Logged in with Google successfully! Redirecting...');
+      setTimeout(() => navigate('/'), 1000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Google Authentication failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleFailure = () => {
+    setError('Google Sign-In was unsuccessful. Please try again.');
+  };
 
   return (
     <div className="auth-page">
@@ -310,6 +332,22 @@ const Login = () => {
                 )}
               </button>
             </form>
+
+            {/* Divider */}
+            <div className="auth-divider">
+              <span className="auth-divider-text">or continue with</span>
+            </div>
+
+            {/* Google Sign In Button */}
+            <div className="auth-google-container">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleFailure}
+                theme="filled_blue"
+                shape="rectangular"
+                width="100%"
+              />
+            </div>
 
             {/* Switch Mode */}
             <p className="auth-switch">
