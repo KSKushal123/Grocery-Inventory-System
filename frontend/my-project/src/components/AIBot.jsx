@@ -451,9 +451,19 @@ function AIBot() {
     };
 
     recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
       setIsListening(false);
-      addBotMessage('I could not hear that clearly. Please try again or type the command.');
+      
+      if (event.error === 'not-allowed') {
+        addBotMessage('Microphone access is blocked. Please ensure you have granted microphone permissions in your browser and that the application is running over a secure connection (HTTPS).');
+      } else if (event.error === 'no-speech') {
+        addBotMessage('No speech was detected. Please try speaking again.');
+      } else if (event.error === 'network') {
+        addBotMessage('Speech recognition network error. Please check your internet connection and try again.');
+      } else {
+        addBotMessage('I could not hear that clearly. Please try again or type the command.');
+      }
     };
 
     recognitionRef.current = recognition;
