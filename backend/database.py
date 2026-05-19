@@ -2,12 +2,18 @@ import os
 from pymongo import MongoClient
 
 MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "mongodb://localhost:27017/"
+MONGO_DB_NAME = os.getenv("MONGODB_DB", "grocery_inventory")
+MONGO_TIMEOUT_MS = int(os.getenv("MONGODB_TIMEOUT_MS", "5000"))
 
-client = MongoClient(MONGO_DETAILS)
-database = client.grocery_inventory
+client = MongoClient(MONGO_DETAILS, serverSelectionTimeoutMS=MONGO_TIMEOUT_MS)
+database = client[MONGO_DB_NAME]
+
+def check_connection():
+    client.admin.command("ping")
 
 # Seed default data if empty on startup
 def seed_data():
+    check_connection()
     db = database
     if db["distributors"].count_documents({}) == 0:
         db["distributors"].insert_one({
@@ -64,4 +70,3 @@ except Exception as e:
 
 def get_db():
     return database
-
