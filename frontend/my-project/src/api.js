@@ -22,3 +22,11 @@ export const createBusinessOwner = (owner) => axios.post(`${API_URL}/business_ow
 
 export const mailInvoice = (invoice) => axios.post(`${API_URL}/mail-invoice/`, invoice);
 
+export const getInvoices = () => axios.get(`${API_URL}/invoices/`);
+export const createInvoice = (invoice) => axios.post(`${API_URL}/invoices/`, invoice);
+export const uploadInvoicePdf = (invoiceNumber, formData) => axios.post(`${API_URL}/invoices/upload-pdf/${invoiceNumber}`, formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data'
+  }
+});
+

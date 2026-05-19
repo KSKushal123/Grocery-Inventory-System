@@ -108,4 +108,31 @@ class InvoiceRequest(BaseModel):
     total_amount: int
 
 
+class InvoiceLineItem(BaseModel):
+    description: str
+    quantity: int
+    price: float
+    amount: float
+
+class InvoiceCreate(BaseModel):
+    shopName: str
+    invoiceNumber: str
+    orderNumber: Optional[str] = None
+    salesManager: str
+    distributor: str
+    terms: Optional[str] = None
+    invoiceDate: str
+    dueDate: Optional[str] = None
+    customerNotes: Optional[str] = None
+    lineItems: List[InvoiceLineItem]
+    totalAmount: float
+    includeUpi: Optional[bool] = False
+    upiId: Optional[str] = None
+    payeeName: Optional[str] = None
+
+class Invoice(InvoiceCreate):
+    id: str
+    model_config = ConfigDict(populate_by_name=True)
+
+
 

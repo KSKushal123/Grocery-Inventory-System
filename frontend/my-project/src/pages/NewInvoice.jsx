@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Save, Calculator, Building2, Printer, Mail, MessageCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, FileText, Save, Calculator, Building2, Printer, Mail, MessageCircle, CheckCircle2, ArrowLeft, QrCode } from 'lucide-react';
 import * as api from '../api';
 
 function NewInvoice() {
@@ -21,6 +21,63 @@ function NewInvoice() {
     const saved = localStorage.getItem('inventoryOwnerProfile');
     return saved ? JSON.parse(saved) : { name: "Alice Johnson" };
   });
+
+  const [includeUpi, setIncludeUpi] = useState(false);
+  const [upiId, setUpiId] = useState('');
+  const [payeeName, setPayeeName] = useState('');
+  const [pdfUrl, setPdfUrl] = useState('');
+
+  // Sync UPI states when ownerProfile changes or mounts
+  useEffect(() => {
+    if (ownerProfile) {
+      setUpiId(ownerProfile.upiId || '');
+      setPayeeName(ownerProfile.company || ownerProfile.name || 'Alice Johnson');
+      if (ownerProfile.upiId) {
+        setIncludeUpi(true);
+      }
+    }
+  }, [ownerProfile]);
+
+  // Auto-generate and upload PDF when invoice is saved
+  useEffect(() => {
+    if (isSaved) {
+      const generateAndUploadPDF = async () => {
+        try {
+          // Wait for DOM to finish rendering
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          const element = document.getElementById('invoice-printable-area');
+          if (!element) return;
+          
+          // Options for html2pdf
+          const opt = {
+            margin:       [0.4, 0.4, 0.4, 0.4],
+            filename:     `Invoice_${formData.invoiceNumber || 'Draft'}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+          };
+          
+          // Generate PDF blob
+          const pdfBlob = await window.html2pdf().from(element).set(opt).output('blob');
+          
+          // Upload to backend
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', pdfBlob, `Invoice_${formData.invoiceNumber || 'Draft'}.pdf`);
+          
+          const response = await api.uploadInvoicePdf(formData.invoiceNumber || 'Draft', uploadFormData);
+          setPdfUrl(response.data.url);
+          console.log('PDF generated and uploaded successfully:', response.data.url);
+        } catch (err) {
+          console.error('Error generating/uploading PDF:', err);
+        }
+      };
+      
+      generateAndUploadPDF();
+    } else {
+      setPdfUrl(''); // Reset pdfUrl if they go back to editing
+    }
+  }, [isSaved]);
 
   const [lineItems, setLineItems] = useState([
     { id: 1, description: '', quantity: 1, price: 0, amount: 0 }
@@ -116,10 +173,38 @@ function NewInvoice() {
     return lineItems.reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => window.print(), 300); // Automatically prompt print after render
+    try {
+      const invoicePayload = {
+        shopName: formData.shopName,
+        invoiceNumber: formData.invoiceNumber,
+        orderNumber: formData.orderNumber || null,
+        salesManager: formData.salesManager,
+        distributor: formData.distributor,
+        terms: formData.terms || null,
+        invoiceDate: formData.invoiceDate,
+        dueDate: formData.dueDate || null,
+        customerNotes: formData.customerNotes || null,
+        lineItems: lineItems.map(item => ({
+          description: item.description,
+          quantity: parseInt(item.quantity) || 0,
+          price: parseFloat(item.price) || 0,
+          amount: parseFloat(item.amount) || 0
+        })),
+        totalAmount: calculateTotal(),
+        includeUpi: includeUpi,
+        upiId: includeUpi ? upiId : null,
+        payeeName: includeUpi ? payeeName : null
+      };
+
+      await api.createInvoice(invoicePayload);
+      setIsSaved(true);
+      setTimeout(() => window.print(), 300); // Automatically prompt print after render
+    } catch (error) {
+      console.error('Error saving invoice to database:', error);
+      alert('Failed to save invoice to the database. Please try again.');
+    }
   };
 
   const handlePrint = () => {
@@ -127,14 +212,20 @@ function NewInvoice() {
   };
 
   const handleEmail = () => {
-    const subject = encodeURIComponent(`Invoice ${formData.invoiceNumber} from ${ownerProfile.name}`);
-    const body = encodeURIComponent(`Hello ${formData.shopName},\n\nPlease find attached the details for Invoice ${formData.invoiceNumber} for the amount of ₹${calculateTotal().toFixed(2)}.\n\nThank you for your business!\n\nBest,\n${ownerProfile.name}`);
+    const subject = encodeURIComponent(`Invoice ${formData.invoiceNumber || 'Draft'} from ${ownerProfile.name}`);
+    const msg = pdfUrl
+      ? `Hello ${formData.shopName},\n\nYour Invoice ${formData.invoiceNumber || ''} for ₹${calculateTotal().toFixed(2)} has been generated successfully.\n\nYou can download the high-quality PDF invoice here:\n${pdfUrl}\n\nThank you for your business!\n\nBest,\n${ownerProfile.name}`
+      : `Hello ${formData.shopName},\n\nPlease find the details for Invoice ${formData.invoiceNumber || ''} for the amount of ₹${calculateTotal().toFixed(2)}.\n\nThank you for your business!\n\nBest,\n${ownerProfile.name}`;
+    const body = encodeURIComponent(msg);
     const shopEmail = `owner@${formData.shopName.replace(/\s+/g, '').toLowerCase() || 'shop'}.com`;
     window.location.href = `mailto:${shopEmail}?subject=${subject}&body=${body}`;
   };
 
   const handleWhatsApp = () => {
-    const text = encodeURIComponent(`Hello ${formData.shopName}, this is ${ownerProfile.name}. Here is the summary for your new Invoice ${formData.invoiceNumber}. Total amount due is ₹${calculateTotal().toFixed(2)}. Please let us know if you have any questions!`);
+    const msg = pdfUrl
+      ? `Hello ${formData.shopName}, here is your Invoice ${formData.invoiceNumber || ''} for ₹${calculateTotal().toFixed(2)}.\n\nDownload PDF: ${pdfUrl}`
+      : `Hello ${formData.shopName}, here is the summary for your new Invoice ${formData.invoiceNumber || ''}. Total amount due is ₹${calculateTotal().toFixed(2)}.`;
+    const text = encodeURIComponent(msg);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
@@ -148,11 +239,15 @@ function NewInvoice() {
             .app-container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
             .glass-panel { box-shadow: none !important; border: none !important; padding: 0 !important; }
             header, nav, .navbar { display: none !important; }
+            .upi-payment-section { background: transparent !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
           }
         `}</style>
         <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', background: '#fff', color: '#000' }}>
           
-          <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
             <button className="btn btn-secondary" onClick={() => setIsSaved(false)} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>
               <ArrowLeft size={18} /> Edit Invoice
             </button>
@@ -169,7 +264,40 @@ function NewInvoice() {
             </div>
           </div>
 
-          <div style={{ padding: '1rem 2rem' }}>
+          <div className="no-print" style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            marginBottom: '2rem', 
+            padding: '0.6rem 1rem', 
+            background: !pdfUrl ? 'rgba(59, 130, 246, 0.05)' : 'rgba(16, 185, 129, 0.05)',
+            border: !pdfUrl ? '1px dashed rgba(59, 130, 246, 0.2)' : '1px dashed rgba(16, 185, 129, 0.2)',
+            borderRadius: '8px',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.85rem',
+            transition: 'all 0.3s ease'
+          }}>
+            {!pdfUrl ? (
+              <span style={{ color: '#3b82f6', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="spinner" style={{ 
+                  display: 'inline-block', 
+                  width: '12px', 
+                  height: '12px', 
+                  border: '2px solid rgba(59, 130, 246, 0.2)', 
+                  borderTopColor: '#3b82f6', 
+                  borderRadius: '50%', 
+                  animation: 'spin 1s linear infinite' 
+                }} />
+                Compiling high-quality PDF invoice and generating download link...
+              </span>
+            ) : (
+              <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500' }}>
+                ✓ Invoice PDF compiled and attached to WhatsApp and Email sharing!
+              </span>
+            )}
+          </div>
+
+          <div id="invoice-printable-area" style={{ padding: '1rem 2rem', background: '#fff', color: '#000' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
               <div>
                 <h1 style={{ fontSize: '2.5rem', color: '#0f172a', margin: 0, padding: 0, fontFamily: 'serif', letterSpacing: '1px' }}>INVOICE</h1>
@@ -233,6 +361,53 @@ function NewInvoice() {
               <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <h4 style={{ color: '#64748b', margin: '0 0 0.5rem 0', fontSize: '0.85rem', textTransform: 'uppercase' }}>Notes:</h4>
                 <p style={{ margin: 0, color: '#334155' }}>{formData.customerNotes}</p>
+              </div>
+            )}
+
+            {includeUpi && upiId && (
+              <div className="upi-payment-section" style={{ 
+                marginBottom: '2rem', 
+                padding: '1.25rem', 
+                background: '#f8fafc', 
+                borderRadius: '12px', 
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5rem',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ 
+                  background: '#ffffff', 
+                  padding: '8px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid #e2e8f0',
+                  flexShrink: 0,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                      `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${calculateTotal().toFixed(2)}&cu=INR&tn=${encodeURIComponent('Invoice ' + (formData.invoiceNumber || 'Draft'))}`
+                    )}`}
+                    alt="UPI QR Code"
+                    style={{ width: '130px', height: '130px', display: 'block' }}
+                  />
+                </div>
+                <div style={{ flex: '1', minWidth: '200px', textAlign: 'left' }}>
+                  <h4 style={{ color: '#0f172a', margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <QrCode size={18} style={{ color: '#3b82f6' }} />
+                    Pay with UPI QR Code
+                  </h4>
+                  <p style={{ margin: '0 0 0.5rem 0', color: '#475569', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                    Scan using any UPI app (GPay, PhonePe, Paytm, BHIM) to make a payment of <strong style={{ color: '#0f172a' }}>₹{calculateTotal().toFixed(2)}</strong>.
+                  </p>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    <div style={{ marginBottom: '0.15rem' }}><strong>Payee Name:</strong> {payeeName}</div>
+                    <div><strong>UPI ID:</strong> {upiId}</div>
+                  </div>
+                </div>
               </div>
             )}
             
@@ -521,6 +696,81 @@ function NewInvoice() {
               rows="3"
               placeholder="Thanks for your business..."
             ></textarea>
+          </div>
+
+          {/* UPI Payment Option */}
+          <div style={{ 
+            marginBottom: '2rem', 
+            background: 'rgba(15, 23, 42, 0.4)', 
+            borderRadius: '12px', 
+            padding: '1.5rem', 
+            border: '1px solid rgba(255,255,255,0.05)',
+            transition: 'all 0.3s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.1rem', color: '#e2e8f0' }}>
+                <QrCode size={18} style={{ color: '#3b82f6' }} />
+                Generate Bill with UPI QR Code
+              </h3>
+              <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+                <input 
+                  type="checkbox" 
+                  checked={includeUpi} 
+                  onChange={(e) => setIncludeUpi(e.target.checked)} 
+                  style={{ display: 'none' }}
+                />
+                <div style={{
+                  width: '44px',
+                  height: '24px',
+                  backgroundColor: includeUpi ? '#3b82f6' : 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  position: 'relative',
+                  transition: 'background-color 0.2s',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    backgroundColor: '#fff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    top: '2px',
+                    left: includeUpi ? '22px' : '2px',
+                    transition: 'left 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }} />
+                </div>
+              </label>
+            </div>
+
+            {includeUpi && (
+              <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '1rem' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem', display: 'block' }}>UPI ID (VPA)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ margin: 0 }}
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="e.g. merchant@upi"
+                    required={includeUpi}
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem', display: 'block' }}>Payee Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ margin: 0 }}
+                    value={payeeName}
+                    onChange={(e) => setPayeeName(e.target.value)}
+                    placeholder="e.g. Alice Retail Store"
+                    required={includeUpi}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>

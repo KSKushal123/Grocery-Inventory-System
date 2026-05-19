@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Phone, Mail, Building, Briefcase, Edit, Save, MapPin, Award } from 'lucide-react';
+import { User, Phone, Mail, Building, Briefcase, Edit, Save, MapPin, Award, QrCode } from 'lucide-react';
 
 function BusinessOwner() {
   const [owner, setOwner] = useState(() => {
@@ -12,7 +12,8 @@ function BusinessOwner() {
       address: "123 Business Blvd, Downtown",
       role: "CEO & Founder",
       storesCount: 4,
-      status: "Premium Partner"
+      status: "Premium Partner",
+      upiId: "alice@okaxis"
     };
   });
   
@@ -104,6 +105,7 @@ function BusinessOwner() {
             {isEditing ? (
               <>
                 <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Company</label><input type="text" className="form-control" value={owner.company} onChange={e => handleEditChange('company', e.target.value)} placeholder="Company Name" /></div>
+                <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>UPI ID for Payments</label><input type="text" className="form-control" value={owner.upiId || ''} onChange={e => handleEditChange('upiId', e.target.value)} placeholder="e.g. alice@okaxis" /></div>
                 <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Number of Stores</label><input type="number" className="form-control" value={owner.storesCount} onChange={e => handleEditChange('storesCount', parseInt(e.target.value) || 0)} placeholder="Stores" /></div>
                 <div><label style={{ fontSize: '0.8rem', color: '#475569' }}>Status</label><input type="text" className="form-control" value={owner.status} onChange={e => handleEditChange('status', e.target.value)} placeholder="Status" /></div>
               </>
@@ -112,6 +114,10 @@ function BusinessOwner() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <Building size={18} style={{ color: '#3b82f6' }} />
                   <span style={{ fontWeight: 'bold', color: 'var(--text-color)' }}>{owner.company}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <QrCode size={18} style={{ color: '#3b82f6' }} />
+                  <span>UPI ID: <strong style={{ color: 'var(--text-color)' }}>{owner.upiId || "Not Configured"}</strong></span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>
