@@ -460,7 +460,7 @@ function AIBot() {
       } else if (event.error === 'no-speech') {
         addBotMessage('No speech was detected. Please try speaking again.');
       } else if (event.error === 'network') {
-        addBotMessage('Speech recognition network error. Please check your internet connection and try again.');
+        addBotMessage('Speech recognition network error. This usually occurs if you are using Brave, Opera, Vivaldi, or Chromium (which block Google speech servers for privacy), or if a firewall/VPN is blocking it. Please try using Google Chrome or Microsoft Edge, or type your command instead.');
       } else {
         addBotMessage('I could not hear that clearly. Please try again or type the command.');
       }
