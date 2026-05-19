@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Save, Calculator, Building2, Printer, Mail, MessageCircle, CheckCircle2, ArrowLeft, QrCode } from 'lucide-react';
+import { Plus, Trash2, FileText, Calculator, Building2, Printer, Mail, MessageCircle, ArrowLeft, QrCode } from 'lucide-react';
 import * as api from '../api';
 
 function NewInvoice() {
@@ -17,67 +17,14 @@ function NewInvoice() {
 
   const [isSaved, setIsSaved] = useState(false);
 
-  const [ownerProfile, setOwnerProfile] = useState(() => {
+  const [ownerProfile] = useState(() => {
     const saved = localStorage.getItem('inventoryOwnerProfile');
     return saved ? JSON.parse(saved) : { name: "Alice Johnson" };
   });
 
-  const [includeUpi, setIncludeUpi] = useState(false);
-  const [upiId, setUpiId] = useState('');
-  const [payeeName, setPayeeName] = useState('');
-  const [pdfUrl, setPdfUrl] = useState('');
-
-  // Sync UPI states when ownerProfile changes or mounts
-  useEffect(() => {
-    if (ownerProfile) {
-      setUpiId(ownerProfile.upiId || '');
-      setPayeeName(ownerProfile.company || ownerProfile.name || 'Alice Johnson');
-      if (ownerProfile.upiId) {
-        setIncludeUpi(true);
-      }
-    }
-  }, [ownerProfile]);
-
-  // Auto-generate and upload PDF when invoice is saved
-  useEffect(() => {
-    if (isSaved) {
-      const generateAndUploadPDF = async () => {
-        try {
-          // Wait for DOM to finish rendering
-          await new Promise(resolve => setTimeout(resolve, 800));
-          
-          const element = document.getElementById('invoice-printable-area');
-          if (!element) return;
-          
-          // Options for html2pdf
-          const opt = {
-            margin:       [0.4, 0.4, 0.4, 0.4],
-            filename:     `Invoice_${formData.invoiceNumber || 'Draft'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-          };
-          
-          // Generate PDF blob
-          const pdfBlob = await window.html2pdf().from(element).set(opt).output('blob');
-          
-          // Upload to backend
-          const uploadFormData = new FormData();
-          uploadFormData.append('file', pdfBlob, `Invoice_${formData.invoiceNumber || 'Draft'}.pdf`);
-          
-          const response = await api.uploadInvoicePdf(formData.invoiceNumber || 'Draft', uploadFormData);
-          setPdfUrl(response.data.url);
-          console.log('PDF generated and uploaded successfully:', response.data.url);
-        } catch (err) {
-          console.error('Error generating/uploading PDF:', err);
-        }
-      };
-      
-      generateAndUploadPDF();
-    } else {
-      setPdfUrl(''); // Reset pdfUrl if they go back to editing
-    }
-  }, [isSaved]);
+  const [includeUpi, setIncludeUpi] = useState(() => Boolean(ownerProfile.upiId));
+  const [upiId, setUpiId] = useState(() => ownerProfile.upiId || '');
+  const [payeeName, setPayeeName] = useState(() => ownerProfile.company || ownerProfile.name || 'Alice Johnson');
 
   const [lineItems, setLineItems] = useState([
     { id: 1, description: '', quantity: 1, price: 0, amount: 0 }
@@ -200,10 +147,14 @@ function NewInvoice() {
 
       await api.createInvoice(invoicePayload);
       setIsSaved(true);
-      setTimeout(() => window.print(), 300); // Automatically prompt print after render
     } catch (error) {
-      console.error('Error saving invoice to database:', error);
-      alert('Failed to save invoice to the database. Please try again.');
+      console.error('Error creating invoice in database:', error);
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+      const message = status === 404
+        ? 'Invoice API route was not found. Please restart the backend server so the latest invoice route is loaded.'
+        : detail || 'Failed to create invoice in the database. Please try again.';
+      alert(message);
     }
   };
 
@@ -213,18 +164,14 @@ function NewInvoice() {
 
   const handleEmail = () => {
     const subject = encodeURIComponent(`Invoice ${formData.invoiceNumber || 'Draft'} from ${ownerProfile.name}`);
-    const msg = pdfUrl
-      ? `Hello ${formData.shopName},\n\nYour Invoice ${formData.invoiceNumber || ''} for ₹${calculateTotal().toFixed(2)} has been generated successfully.\n\nYou can download the high-quality PDF invoice here:\n${pdfUrl}\n\nThank you for your business!\n\nBest,\n${ownerProfile.name}`
-      : `Hello ${formData.shopName},\n\nPlease find the details for Invoice ${formData.invoiceNumber || ''} for the amount of ₹${calculateTotal().toFixed(2)}.\n\nThank you for your business!\n\nBest,\n${ownerProfile.name}`;
+    const msg = `Hello ${formData.shopName},\n\nPlease find the details for Invoice ${formData.invoiceNumber || ''} for the amount of ₹${calculateTotal().toFixed(2)}.\n\nThank you for your business!\n\nBest,\n${ownerProfile.name}`;
     const body = encodeURIComponent(msg);
     const shopEmail = `owner@${formData.shopName.replace(/\s+/g, '').toLowerCase() || 'shop'}.com`;
     window.location.href = `mailto:${shopEmail}?subject=${subject}&body=${body}`;
   };
 
   const handleWhatsApp = () => {
-    const msg = pdfUrl
-      ? `Hello ${formData.shopName}, here is your Invoice ${formData.invoiceNumber || ''} for ₹${calculateTotal().toFixed(2)}.\n\nDownload PDF: ${pdfUrl}`
-      : `Hello ${formData.shopName}, here is the summary for your new Invoice ${formData.invoiceNumber || ''}. Total amount due is ₹${calculateTotal().toFixed(2)}.`;
+    const msg = `Hello ${formData.shopName}, here is the summary for your new Invoice ${formData.invoiceNumber || ''}. Total amount due is ₹${calculateTotal().toFixed(2)}.`;
     const text = encodeURIComponent(msg);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -262,39 +209,6 @@ function NewInvoice() {
                 <MessageCircle size={18} /> WhatsApp
               </button>
             </div>
-          </div>
-
-          <div className="no-print" style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            marginBottom: '2rem', 
-            padding: '0.6rem 1rem', 
-            background: !pdfUrl ? 'rgba(59, 130, 246, 0.05)' : 'rgba(16, 185, 129, 0.05)',
-            border: !pdfUrl ? '1px dashed rgba(59, 130, 246, 0.2)' : '1px dashed rgba(16, 185, 129, 0.2)',
-            borderRadius: '8px',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.85rem',
-            transition: 'all 0.3s ease'
-          }}>
-            {!pdfUrl ? (
-              <span style={{ color: '#3b82f6', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="spinner" style={{ 
-                  display: 'inline-block', 
-                  width: '12px', 
-                  height: '12px', 
-                  border: '2px solid rgba(59, 130, 246, 0.2)', 
-                  borderTopColor: '#3b82f6', 
-                  borderRadius: '50%', 
-                  animation: 'spin 1s linear infinite' 
-                }} />
-                Compiling high-quality PDF invoice and generating download link...
-              </span>
-            ) : (
-              <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500' }}>
-                ✓ Invoice PDF compiled and attached to WhatsApp and Email sharing!
-              </span>
-            )}
           </div>
 
           <div id="invoice-printable-area" style={{ padding: '1rem 2rem', background: '#fff', color: '#000' }}>
@@ -778,7 +692,7 @@ function NewInvoice() {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Save size={18} /> Save Invoice
+              <Plus size={18} /> Create
             </button>
           </div>
         </form>

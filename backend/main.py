@@ -1,13 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from bson.objectid import ObjectId
 from pymongo.database import Database
 import urllib.request
 import json
-import os
-import shutil
 
 import schemas
 from database import get_db
@@ -23,14 +20,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Ensure the static directory and static/invoices subdirectory exist
-static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-invoices_dir = os.path.join(static_dir, "invoices")
-os.makedirs(invoices_dir, exist_ok=True)
-
-# Mount the static directory to serve file downloads
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 def fix_id(doc):
     if doc:
@@ -252,7 +241,7 @@ def read_business_owners(skip: int = 0, limit: int = 1000, db: Database = Depend
 
 @app.post("/mail-invoice/")
 def mail_invoice(invoice: schemas.InvoiceRequest, db: Database = Depends(get_db)):
-    # 1. Save to Mongo DB
+    # 1. Store invoice data in MongoDB
     invoice_dict = invoice.model_dump()
     result = db["invoices"].insert_one(invoice_dict)
     
@@ -287,22 +276,3 @@ def create_invoice(invoice: schemas.InvoiceCreate, db: Database = Depends(get_db
 def read_invoices(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
     invoices = list(db["invoices"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(inv) for inv in invoices]
-
-
-@app.post("/invoices/upload-pdf/{invoice_number}")
-def upload_invoice_pdf(invoice_number: str, file: UploadFile = File(...)):
-    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-    invoices_dir = os.path.join(static_dir, "invoices")
-    
-    # Safe filename structure
-    safe_number = invoice_number.replace("/", "_").replace("\\", "_").replace(" ", "_")
-    file_path = os.path.join(invoices_dir, f"{safe_number}.pdf")
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    return {
-        "status": "success",
-        "url": f"http://localhost:8000/static/invoices/{safe_number}.pdf"
-    }
-

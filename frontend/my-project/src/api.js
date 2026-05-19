@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 
 export const getItems = () => axios.get(`${API_URL}/items/`);
 export const createItem = (item) => axios.post(`${API_URL}/items/`, item);
@@ -24,9 +24,3 @@ export const mailInvoice = (invoice) => axios.post(`${API_URL}/mail-invoice/`, i
 
 export const getInvoices = () => axios.get(`${API_URL}/invoices/`);
 export const createInvoice = (invoice) => axios.post(`${API_URL}/invoices/`, invoice);
-export const uploadInvoicePdf = (invoiceNumber, formData) => axios.post(`${API_URL}/invoices/upload-pdf/${invoiceNumber}`, formData, {
-  headers: {
-    'Content-Type': 'multipart/form-data'
-  }
-});
-

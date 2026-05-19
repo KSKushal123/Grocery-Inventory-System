@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
+import AIBot from './components/AIBot';
 import Inventory from './pages/Inventory';
 import DistributorProfile from './pages/DistributorProfile';
 import Shops from './pages/Shops';
@@ -55,6 +56,7 @@ function AppLayout() {
         <Route path="/new-invoice" element={<ProtectedRoute><NewInvoice /></ProtectedRoute>} />
         <Route path="/owners" element={<ProtectedRoute><BusinessOwner /></ProtectedRoute>} />
       </Routes>
+      <AIBot />
     </div>
   );
 }

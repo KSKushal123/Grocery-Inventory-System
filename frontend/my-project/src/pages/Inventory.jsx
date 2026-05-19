@@ -42,6 +42,29 @@ function Inventory() {
   }, []);
 
   useEffect(() => {
+    const applyPendingSearch = () => {
+      const pendingSearch = localStorage.getItem('aiPendingInventorySearch');
+      if (pendingSearch) {
+        setSearchTerm(pendingSearch);
+        localStorage.removeItem('aiPendingInventorySearch');
+      }
+    };
+
+    const handleSearch = (event) => {
+      setSearchTerm(event.detail || '');
+    };
+
+    applyPendingSearch();
+    window.addEventListener('ai:set-inventory-search', handleSearch);
+    window.addEventListener('ai:refresh-inventory', fetchItems);
+
+    return () => {
+      window.removeEventListener('ai:set-inventory-search', handleSearch);
+      window.removeEventListener('ai:refresh-inventory', fetchItems);
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('inventoryOwnerProfile', JSON.stringify(ownerProfile));
   }, [ownerProfile]);
 
