@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+console.log('[GrocerySys API] Connecting to:', API_URL);
 
 export const getItems = () => axios.get(`${API_URL}/items/`);
 export const createItem = (item) => axios.post(`${API_URL}/items/`, item);
