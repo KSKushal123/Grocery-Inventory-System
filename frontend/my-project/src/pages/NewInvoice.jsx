@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, FileText, Calculator, Building2, Printer, Mail, MessageCircle, ArrowLeft, QrCode } from 'lucide-react';
 import * as api from '../api';
 
 function NewInvoice() {
+  const formRef = useRef(null);
   const [formData, setFormData] = useState({
     shopName: '',
     invoiceNumber: '',
@@ -34,6 +35,14 @@ function NewInvoice() {
   const [distributors, setDistributors] = useState([]);
   const [availableShops, setAvailableShops] = useState([]);
 
+  const normalizeName = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  const findInventoryItem = (name) => {
+    const normalizedName = normalizeName(name);
+    return inventoryItems.find(item => normalizeName(item.name) === normalizedName)
+      || inventoryItems.find(item => normalizeName(item.name).includes(normalizedName) || normalizedName.includes(normalizeName(item.name)));
+  };
+
   useEffect(() => {
     const fetchItems = async () => {
       try {
@@ -59,6 +68,94 @@ function NewInvoice() {
 
     fetchItems();
     fetchDistributorsAndShops();
+  }, []);
+
+  useEffect(() => {
+    const applyInvoiceDraft = (draft) => {
+      if (!draft) return;
+
+      if (draft.formData) {
+        setFormData(prev => ({
+          ...prev,
+          ...Object.fromEntries(
+            Object.entries(draft.formData).filter(([, value]) => value !== undefined && value !== null && value !== '')
+          )
+        }));
+      }
+
+      if (Array.isArray(draft.lineItems) && draft.lineItems.length > 0) {
+        setLineItems(prev => draft.lineItems.map((item, index) => {
+          const currentItem = prev[index] || {};
+          const matchedInventoryItem = item.description ? findInventoryItem(item.description) : null;
+          const description = matchedInventoryItem?.name || item.description || currentItem.description || '';
+          const quantity = Number(item.quantity) || Number(currentItem.quantity) || 1;
+          const price = Number(item.price) || Number(matchedInventoryItem?.price) || Number(currentItem.price) || 0;
+
+          return {
+            id: currentItem.id || Date.now() + index,
+            description,
+            quantity,
+            price,
+            amount: quantity * price
+          };
+        }));
+      }
+
+      setIsSaved(false);
+    };
+
+    const consumePendingDraft = () => {
+      const saved = localStorage.getItem('aiPendingInvoice');
+      if (!saved) return;
+
+      try {
+        applyInvoiceDraft(JSON.parse(saved));
+        localStorage.removeItem('aiPendingInvoice');
+      } catch (error) {
+        console.error('Error applying AI invoice draft:', error);
+      }
+    };
+
+    const handleInvoiceDraft = (event) => {
+      applyInvoiceDraft(event.detail);
+      localStorage.removeItem('aiPendingInvoice');
+    };
+
+    consumePendingDraft();
+    window.addEventListener('ai:set-invoice', handleInvoiceDraft);
+
+    return () => {
+      window.removeEventListener('ai:set-invoice', handleInvoiceDraft);
+    };
+  }, [inventoryItems]);
+
+  useEffect(() => {
+    if (inventoryItems.length === 0) return;
+
+    setLineItems(prev => prev.map(item => {
+      const matchedInventoryItem = item.description ? findInventoryItem(item.description) : null;
+      if (!matchedInventoryItem) return item;
+
+      const price = Number(item.price) || Number(matchedInventoryItem.price) || 0;
+      return {
+        ...item,
+        description: matchedInventoryItem.name,
+        price,
+        amount: (Number(item.quantity) || 1) * price
+      };
+    }));
+  }, [inventoryItems]);
+
+  useEffect(() => {
+    const handleCreateInvoice = () => {
+      formRef.current?.requestSubmit();
+    };
+
+    window.addEventListener('ai:create-invoice', handleCreateInvoice);
+
+    return () => {
+      window.removeEventListener('ai:create-invoice', handleCreateInvoice);
+    };
   }, []);
 
   const salesManagers = [
@@ -90,8 +187,9 @@ function NewInvoice() {
     
     // Auto-fill price if description is selected from inventory
     if (field === 'description') {
-      const selectedItem = inventoryItems.find(item => item.name === value);
+      const selectedItem = findInventoryItem(value);
       if (selectedItem) {
+        updatedItems[index][field] = selectedItem.name;
         updatedItems[index]['price'] = selectedItem.price;
       }
     }
@@ -347,7 +445,7 @@ function NewInvoice() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           {/* Header Details */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
             <div className="form-group" style={{ position: 'relative' }}>
@@ -539,6 +637,9 @@ function NewInvoice() {
                           required
                         >
                           <option value="">Select Inventory Item</option>
+                          {item.description && !inventoryItems.some(invItem => invItem.name === item.description) && (
+                            <option value={item.description}>{item.description}</option>
+                          )}
                           {inventoryItems.map(invItem => (
                             <option key={invItem.id} value={invItem.name}>
                               {invItem.name} (₹{invItem.price})
