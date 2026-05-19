@@ -1,7 +1,7 @@
 import os
 from pymongo import MongoClient
 
-MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "mongodb://localhost:27017/"
+MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "mongodb+srv://kskushal123456_db_user:<fGlFgx8YhM5ej5tv>@cluster0.qtzjhnv.mongodb.net/?appName=Cluster0"
 MONGO_DB_NAME = os.getenv("MONGODB_DB", "grocery_inventory")
 MONGO_TIMEOUT_MS = int(os.getenv("MONGODB_TIMEOUT_MS", "5000"))
 
