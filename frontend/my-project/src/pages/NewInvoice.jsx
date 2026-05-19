@@ -60,7 +60,7 @@ function NewInvoice() {
           api.getShops()
         ]);
         setDistributors(distRes.data.map(d => d.name));
-        setAvailableShops(shopRes.data.map(s => s.name));
+        setAvailableShops(shopRes.data || []);
       } catch (error) {
         console.error('Error fetching distributors or shops:', error);
       }
@@ -166,19 +166,9 @@ function NewInvoice() {
     "Emily Davis"
   ];
 
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    if (name === 'shopName') {
-      setShowSuggestions(true);
-    }
-  };
-
-  const handleShopSelect = (shop) => {
-    setFormData({ ...formData, shopName: shop });
-    setShowSuggestions(false);
   };
 
   const handleLineItemChange = (index, field, value) => {
@@ -451,62 +441,37 @@ function NewInvoice() {
             <div className="form-group" style={{ position: 'relative' }}>
               <label>Shop Name</label>
               <div style={{ position: 'relative' }}>
-                <Building2 size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input
-                  type="text"
+                <Building2 size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none', zIndex: 10 }} />
+                <select
                   name="shopName"
                   className="form-control"
-                  style={{ paddingLeft: '2.5rem' }}
+                  style={{ paddingLeft: '2.5rem', appearance: 'none', WebkitAppearance: 'none' }}
                   value={formData.shopName}
                   onChange={handleInputChange}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder="e.g. City Supermarket"
                   required
-                />
-              </div>
-              {showSuggestions && formData.shopName.length > 0 && (
+                >
+                  <option value="">Select Nearby Shop</option>
+                  {formData.shopName && !availableShops.some(shop => shop.name === formData.shopName) && (
+                    <option value={formData.shopName}>{formData.shopName}</option>
+                  )}
+                  {availableShops.map(shop => (
+                    <option key={shop.id || shop.name} value={shop.name}>
+                      {shop.name} {shop.distance ? `(${shop.distance} away)` : ''} {shop.address ? `- ${shop.address}` : ''}
+                    </option>
+                  ))}
+                </select>
                 <div style={{
                   position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  background: 'var(--glass-bg)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '10px',
-                  marginTop: '0.25rem',
-                  boxShadow: 'var(--glass-shadow)',
-                  zIndex: 50,
-                  maxHeight: '150px',
-                  overflowY: 'auto'
+                  right: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                  color: '#94a3b8',
+                  fontSize: '0.8rem'
                 }}>
-                  {availableShops
-                    .filter(s => s.toLowerCase().includes(formData.shopName.toLowerCase()))
-                    .map((shop, i, arr) => (
-                    <div 
-                      key={i} 
-                      onClick={() => handleShopSelect(shop)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        cursor: 'pointer',
-                        borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.background = 'rgba(59, 130, 246, 0.1)'}
-                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                    >
-                      {shop}
-                    </div>
-                  ))}
-                  {availableShops.filter(s => s.toLowerCase().includes(formData.shopName.toLowerCase())).length === 0 && (
-                    <div style={{ padding: '0.75rem 1rem', color: '#94a3b8', fontStyle: 'italic', fontSize: '0.9rem' }}>
-                      No matching shops found.
-                    </div>
-                  )}
+                  ▼
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="form-group">

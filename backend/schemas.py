@@ -135,4 +135,16 @@ class Invoice(InvoiceCreate):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class TelegramAskRequest(BaseModel):
+    message: str
+
+
+class TelegramAskResponse(BaseModel):
+    reply: str
+
+
+class TelegramWebhookSetup(BaseModel):
+    public_url: str
+    secret: Optional[str] = None
+
 

@@ -5,11 +5,19 @@ from bson.objectid import ObjectId
 from pymongo.database import Database
 import urllib.request
 import json
+import os
 
 import schemas
 from database import get_db
 import auth
+import telegram_bot
 from datetime import timedelta
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 app = FastAPI()
 
@@ -276,3 +284,30 @@ def create_invoice(invoice: schemas.InvoiceCreate, db: Database = Depends(get_db
 def read_invoices(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
     invoices = list(db["invoices"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(inv) for inv in invoices]
+
+
+@app.post("/telegram/ask", response_model=schemas.TelegramAskResponse)
+def ask_telegram_assistant(request_data: schemas.TelegramAskRequest, db: Database = Depends(get_db)):
+    return {"reply": telegram_bot.build_project_reply(request_data.message, db)}
+
+
+@app.post("/telegram/webhook")
+@app.post("/telegram/webhook/{secret}")
+def telegram_webhook(update: dict, secret: str = "", db: Database = Depends(get_db)):
+    expected_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+    if expected_secret and secret != expected_secret:
+        raise HTTPException(status_code=403, detail="Invalid Telegram webhook secret")
+
+    message = telegram_bot.extract_telegram_message(update)
+    if not message:
+        return {"ok": True, "message": "No text message to answer"}
+
+    reply = telegram_bot.build_project_reply(message["text"], db)
+    telegram_bot.send_telegram_message(message["chat_id"], reply)
+    return {"ok": True}
+
+
+@app.post("/telegram/set-webhook")
+def telegram_set_webhook(request_data: schemas.TelegramWebhookSetup):
+    secret = request_data.secret or os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+    return telegram_bot.set_telegram_webhook(request_data.public_url, secret)
