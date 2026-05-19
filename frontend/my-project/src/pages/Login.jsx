@@ -219,7 +219,7 @@ const Login = () => {
                 onError={handleGoogleFailure}
                 theme="filled_blue"
                 shape="rectangular"
-                width="100%"
+                width="320"
               />
             </div>
 

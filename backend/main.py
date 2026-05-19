@@ -7,6 +7,7 @@ from pymongo.database import Database
 import urllib.request
 import json
 import os
+import re
 
 import schemas
 from database import get_db
@@ -28,28 +29,39 @@ DEFAULT_CORS_ORIGINS = [
     "https://grocery-shopks.vercel.app",
 ]
 
-cors_origins = [
+configured_cors_origins = [
     origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", ",".join(DEFAULT_CORS_ORIGINS)).split(",")
+    for origin in os.getenv("CORS_ORIGINS", "").split(",")
     if origin.strip()
 ]
+cors_origins = list(dict.fromkeys(DEFAULT_CORS_ORIGINS + configured_cors_origins))
+cors_origin_regex = os.getenv("CORS_ORIGIN_REGEX")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX"),
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+def is_allowed_origin(origin: str) -> bool:
+    return origin in cors_origins or bool(cors_origin_regex and re.fullmatch(cors_origin_regex, origin))
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     print(f"Unhandled error for {request.method} {request.url.path}: {exc}")
-    return JSONResponse(
+    response = JSONResponse(
         status_code=500,
         content={"detail": "Internal server error. Check backend deployment logs."},
     )
+    origin = request.headers.get("origin")
+    if origin and is_allowed_origin(origin):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Vary"] = "Origin"
+    return response
 
 @app.get("/")
 def read_root():
@@ -59,6 +71,12 @@ def fix_id(doc):
     if doc:
         doc["id"] = str(doc.pop("_id"))
     return doc
+
+def user_from_db_doc(user_doc):
+    user_data = fix_id(user_doc.copy())
+    if not user_data.get("name"):
+        user_data["name"] = user_data.get("email", "User").split("@")[0]
+    return schemas.User(**user_data)
 
 @app.post("/items/", response_model=schemas.Item)
 def create_item(item: schemas.ItemCreate, db: Database = Depends(get_db)):
@@ -81,7 +99,7 @@ def register(user: schemas.UserCreate, db: Database = Depends(get_db)):
     result = db["users"].insert_one(user_dict)
     user_dict["_id"] = result.inserted_id
     
-    user_out = schemas.User(**fix_id(user_dict))
+    user_out = user_from_db_doc(user_dict)
     
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
@@ -95,7 +113,7 @@ def login(user: schemas.UserLogin, db: Database = Depends(get_db)):
     if not db_user or not auth.verify_password(user.password, db_user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
         
-    user_out = schemas.User(**fix_id(db_user))
+    user_out = user_from_db_doc(db_user)
     
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
@@ -136,7 +154,7 @@ def google_auth(request_data: schemas.GoogleLoginRequest, db: Database = Depends
         user_dict["_id"] = result.inserted_id
         db_user = user_dict
         
-    user_out = schemas.User(**fix_id(db_user))
+    user_out = user_from_db_doc(db_user)
     
     # Generate access token
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
