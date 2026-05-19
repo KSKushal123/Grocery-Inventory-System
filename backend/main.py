@@ -29,6 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"status": "healthy", "message": "Grocery Inventory System API is running successfully!"}
+
 def fix_id(doc):
     if doc:
         doc["id"] = str(doc.pop("_id"))
