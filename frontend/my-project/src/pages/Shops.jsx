@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Store, Map, Navigation, Phone, ExternalLink, Edit, Save, Plus, Trash2 } from 'lucide-react';
+import { getShops, createShop, updateShop, deleteShop } from '../api';
 
 function Shops() {
   const [shops, setShops] = useState([
     {
-      id: 1,
+      id: "temp-citycenter",
       name: "City Center Mart",
       distance: "1.2 km",
       address: "123 Main St, Downtown",
@@ -13,7 +14,7 @@ function Shops() {
       contact: "(555) 234-5678"
     },
     {
-      id: 2,
+      id: "temp-greenvalley",
       name: "Green Valley Organics",
       distance: "2.5 km",
       address: "45 West Avenue, Suburbia",
@@ -22,7 +23,7 @@ function Shops() {
       contact: "(555) 987-6543"
     },
     {
-      id: 3,
+      id: "temp-corner",
       name: "Corner Convenience",
       distance: "0.5 km",
       address: "88 East Blvd, Retail District",
@@ -31,7 +32,7 @@ function Shops() {
       contact: "(555) 345-6789"
     },
     {
-      id: 4,
+      id: "temp-wholesale",
       name: "Wholesale Club Direct",
       distance: "5.0 km",
       address: "500 Industrial Pkwy",
@@ -42,19 +43,72 @@ function Shops() {
   ]);
   const [editingId, setEditingId] = useState(null);
 
+  useEffect(() => {
+    fetchShops();
+  }, []);
+
+  const fetchShops = async () => {
+    try {
+      const response = await getShops();
+      if (response.data && response.data.length > 0) {
+        setShops(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching shops:", error);
+    }
+  };
+
   const handleEditChange = (id, field, value) => {
     setShops(shops.map(shop => shop.id === id ? { ...shop, [field]: value } : shop));
   };
 
-  const handleDeleteShop = (id) => {
-    setShops(shops.filter(shop => shop.id !== id));
-    if (editingId === id) setEditingId(null);
+  const handleSave = async (shop) => {
+    try {
+      const payload = {
+        name: shop.name || "New Shop",
+        distance: shop.distance || "",
+        address: shop.address || "",
+        type: shop.type || "New Store",
+        status: shop.status || "Unknown",
+        contact: shop.contact || ""
+      };
+
+      if (String(shop.id).startsWith('temp-')) {
+        const response = await createShop(payload);
+        setShops(prev => prev.map(s => s.id === shop.id ? response.data : s));
+      } else {
+        const response = await updateShop(shop.id, payload);
+        setShops(prev => prev.map(s => s.id === shop.id ? response.data : s));
+      }
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error saving shop:", error);
+      alert("Failed to save shop details. Please try again.");
+    }
+  };
+
+  const handleDeleteShop = async (id) => {
+    if (String(id).startsWith('temp-')) {
+      setShops(shops.filter(shop => shop.id !== id));
+      if (editingId === id) setEditingId(null);
+    } else {
+      if (window.confirm("Are you sure you want to delete this shop?")) {
+        try {
+          await deleteShop(id);
+          setShops(shops.filter(shop => shop.id !== id));
+          if (editingId === id) setEditingId(null);
+        } catch (error) {
+          console.error("Error deleting shop:", error);
+          alert("Failed to delete shop.");
+        }
+      }
+    }
   };
 
   const handleAddShop = () => {
-    const newId = Date.now();
+    const tempId = `temp-${Date.now()}`;
     setShops([{
-      id: newId,
+      id: tempId,
       name: "",
       distance: "",
       address: "",
@@ -62,7 +116,7 @@ function Shops() {
       status: "Unknown",
       contact: ""
     }, ...shops]);
-    setEditingId(newId);
+    setEditingId(tempId);
   };
 
   return (
@@ -84,7 +138,13 @@ function Shops() {
           <div key={shop.id} className="glass-panel" style={{ padding: '1.5rem', transition: 'all 0.3s ease', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', display: 'flex', gap: '0.25rem' }}>
               <button 
-                onClick={() => setEditingId(isEditing ? null : shop.id)}
+                onClick={async () => {
+                  if (isEditing) {
+                    await handleSave(shop);
+                  } else {
+                    setEditingId(shop.id);
+                  }
+                }}
                 className="btn-icon" 
                 title={isEditing ? "Save" : "Edit"}
               >

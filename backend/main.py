@@ -158,6 +158,34 @@ def read_distributors(skip: int = 0, limit: int = 1000, db: Database = Depends(g
     distributors = list(db["distributors"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(d) for d in distributors]
 
+@app.put("/distributors/{dist_id}", response_model=schemas.Distributor)
+def update_distributor(dist_id: str, distributor: schemas.DistributorCreate, db: Database = Depends(get_db)):
+    try:
+        obj_id = ObjectId(dist_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+    
+    update_data = distributor.model_dump()
+    result = db["distributors"].update_one({"_id": obj_id}, {"$set": update_data})
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Distributor not found")
+        
+    updated_dist = db["distributors"].find_one({"_id": obj_id})
+    return fix_id(updated_dist)
+
+@app.delete("/distributors/{dist_id}")
+def delete_distributor(dist_id: str, db: Database = Depends(get_db)):
+    try:
+        obj_id = ObjectId(dist_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+    
+    result = db["distributors"].delete_one({"_id": obj_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Distributor not found")
+    return {"message": "Distributor deleted"}
+
 @app.post("/shops/", response_model=schemas.Shop)
 def create_shop(shop: schemas.ShopCreate, db: Database = Depends(get_db)):
     shop_dict = shop.model_dump()
@@ -170,6 +198,34 @@ def read_shops(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db))
     shops = list(db["shops"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(s) for s in shops]
 
+@app.put("/shops/{shop_id}", response_model=schemas.Shop)
+def update_shop(shop_id: str, shop: schemas.ShopCreate, db: Database = Depends(get_db)):
+    try:
+        obj_id = ObjectId(shop_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+    
+    update_data = shop.model_dump()
+    result = db["shops"].update_one({"_id": obj_id}, {"$set": update_data})
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Shop not found")
+        
+    updated_shop = db["shops"].find_one({"_id": obj_id})
+    return fix_id(updated_shop)
+
+@app.delete("/shops/{shop_id}")
+def delete_shop(shop_id: str, db: Database = Depends(get_db)):
+    try:
+        obj_id = ObjectId(shop_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+    
+    result = db["shops"].delete_one({"_id": obj_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Shop not found")
+    return {"message": "Shop deleted"}
+
 @app.post("/business_owners/", response_model=schemas.BusinessOwner)
 def create_business_owner(owner: schemas.BusinessOwnerCreate, db: Database = Depends(get_db)):
     owner_dict = owner.model_dump()
@@ -181,3 +237,30 @@ def create_business_owner(owner: schemas.BusinessOwnerCreate, db: Database = Dep
 def read_business_owners(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db)):
     owners = list(db["business_owners"].find().sort("_id", -1).skip(skip).limit(limit))
     return [fix_id(o) for o in owners]
+
+
+@app.post("/mail-invoice/")
+def mail_invoice(invoice: schemas.InvoiceRequest, db: Database = Depends(get_db)):
+    # 1. Save to Mongo DB
+    invoice_dict = invoice.model_dump()
+    result = db["invoices"].insert_one(invoice_dict)
+    
+    # 2. Mock sending the email (print to terminal/logs)
+    print("\n" + "="*50)
+    print("                     INVOICE SENT")
+    print("="*50)
+    print(f"To Shop:       {invoice.shop_name}")
+    print(f"Partner Email: {invoice.email}")
+    print("-"*50)
+    for item in invoice.items:
+        print(f"- {item.name:25} x{item.quantity:<3} (₹{item.price}) = ₹{item.total}")
+    print("-"*50)
+    print(f"Total Amount:  ₹{invoice.total_amount}")
+    print("="*50 + "\n")
+    
+    return {
+        "status": "success",
+        "invoice_id": str(result.inserted_id),
+        "message": f"Invoice successfully sent to partner shop ({invoice.email})!"
+    }
+

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Package, Plus, Trash2, Edit, IndianRupee, Archive, BarChart2, User, MapPin, Mail, Phone, Award, Search, Filter, Tag, Upload } from 'lucide-react';
 import * as api from '../api';
+import { useLanguage } from '../context/LanguageContext';
 
 function Inventory() {
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [formData, setFormData] = useState({ name: '', description: '', category: 'Produce', quantity: 0, price: 0, image: '' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,79 +111,26 @@ function Inventory() {
 
   return (
     <>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '2rem' }}>
-        <div style={{ textAlign: 'left' }}>
-          <h1 style={{ fontSize: '2.5rem' }}>Inventory Management</h1>
-          <p>Manage your store's stock with elegance</p>
-        </div>
-        
-        <div className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.25rem 2rem', margin: '0', position: 'relative' }}>
-          <button 
-            onClick={() => setIsEditingOwner(!isEditingOwner)}
-            className="btn-icon" 
-            style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}
-            title={isEditingOwner ? "Save" : "Edit Profile"}
-          >
-            <Edit size={16} className={isEditingOwner ? "text-primary-color" : ""} />
-          </button>
-          
-          <div style={{ 
-            width: '64px', height: '64px', borderRadius: '50%', 
-            background: 'linear-gradient(135deg, var(--primary-color), #34d399)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontSize: '1.5rem', fontWeight: 'bold',
-            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-            flexShrink: 0
-          }}>
-            {ownerProfile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'O'}
-          </div>
-          
-          {isEditingOwner ? (
-            <div style={{ display: 'grid', gap: '0.5rem', flex: 1, minWidth: '250px' }}>
-              <input type="text" className="form-control" style={{ padding: '0.25rem 0.5rem' }} value={ownerProfile.name} onChange={e => setOwnerProfile({...ownerProfile, name: e.target.value})} placeholder="Name" />
-              <input type="text" className="form-control" style={{ padding: '0.25rem 0.5rem' }} value={ownerProfile.role} onChange={e => setOwnerProfile({...ownerProfile, role: e.target.value})} placeholder="Role" />
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input type="text" className="form-control" style={{ padding: '0.25rem 0.5rem' }} value={ownerProfile.email} onChange={e => setOwnerProfile({...ownerProfile, email: e.target.value})} placeholder="Email" />
-                <input type="text" className="form-control" style={{ padding: '0.25rem 0.5rem' }} value={ownerProfile.phone} onChange={e => setOwnerProfile({...ownerProfile, phone: e.target.value})} placeholder="Phone" />
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'left' }}>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)' }}>
-                {ownerProfile.name} <Award size={18} style={{ color: '#3b82f6' }} />
-              </h2>
-              <div style={{ color: '#059669', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '600' }}>
-                {ownerProfile.role}
-              </div>
-              <div style={{ display: 'flex', gap: '1rem', color: '#475569', fontSize: '0.85rem', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Mail size={12} /> {ownerProfile.email}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Phone size={12} /> {ownerProfile.phone}</span>
-              </div>
-            </div>
-          )}
-
-        </div>
-      </header>
 
       <div className="stats-container animate-fade-in">
         <div className="glass-panel stat-card">
           <div className="stat-icon"><Package size={24} /></div>
           <div className="stat-info">
-            <h3>Total Products</h3>
+            <h3>{t('totalProducts')}</h3>
             <p>{items.length}</p>
           </div>
         </div>
         <div className="glass-panel stat-card">
           <div className="stat-icon"><Archive size={24} /></div>
           <div className="stat-info">
-            <h3>Total Items in Stock</h3>
+            <h3>{t('totalItemsInStock')}</h3>
             <p>{totalItems}</p>
           </div>
         </div>
         <div className="glass-panel stat-card">
           <div className="stat-icon"><IndianRupee size={24} /></div>
           <div className="stat-info">
-            <h3>Total Inventory Value</h3>
+            <h3>{t('totalInventoryValue')}</h3>
             <p>₹{totalValue}</p>
           </div>
         </div>
@@ -191,11 +140,11 @@ function Inventory() {
         <div className="glass-panel">
           <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {editingId ? <Edit size={20} className="text-primary-color" /> : <Plus size={20} className="text-primary-color" />}
-            {editingId ? 'Edit Product' : 'Add New Product'}
+            {editingId ? t('editProduct') : t('addNewProduct')}
           </h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Product Name</label>
+              <label>{t('productName')}</label>
               <input
                 type="text"
                 className="form-control"
@@ -207,18 +156,18 @@ function Inventory() {
             </div>
             <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
-                <label>Category</label>
+                <label>{t('category')}</label>
                 <select 
                   className="form-control"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
                   required
                 >
-                  {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  {CATEGORIES.map(cat => <option key={cat} value={cat}>{t(cat)}</option>)}
                 </select>
               </div>
               <div>
-                <label>Description</label>
+                <label>{t('description')}</label>
                 <textarea
                   className="form-control"
                   value={formData.description}
@@ -229,7 +178,7 @@ function Inventory() {
               </div>
             </div>
             <div className="form-group">
-              <label>Image (URL or Local File)</label>
+              <label>{t('imageLabel')}</label>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1, display: 'flex', gap: '0.5rem' }}>
                   <input
@@ -242,7 +191,7 @@ function Inventory() {
                   />
                   <label className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0, padding: '0.5rem 1rem', background: '#334155', borderRadius: '8px', color: '#f8fafc', border: '1px solid #475569', whiteSpace: 'nowrap' }}>
                     <Upload size={18} />
-                    Upload
+                    {t('upload')}
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -260,7 +209,7 @@ function Inventory() {
             </div>
             <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
-                <label>Quantity</label>
+                <label>{t('quantity')}</label>
                 <input
                   type="number"
                   className="form-control"
@@ -271,7 +220,7 @@ function Inventory() {
                 />
               </div>
               <div>
-                <label>Price (₹)</label>
+                <label>{t('price')}</label>
                 <input
                   type="number"
                   step="1"
@@ -284,7 +233,7 @@ function Inventory() {
               </div>
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              {editingId ? 'Update Product' : 'Add Product'}
+              {editingId ? t('updateProduct') : t('addProduct')}
             </button>
             {editingId && (
               <button 
@@ -296,7 +245,7 @@ function Inventory() {
                   setFormData({ name: '', description: '', category: 'Produce', quantity: 0, price: 0, image: '' });
                 }}
               >
-                Cancel Edit
+                {t('cancelEdit')}
               </button>
             )}
           </form>
@@ -306,14 +255,14 @@ function Inventory() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
               <BarChart2 size={20} />
-              Current Inventory
+              {t('currentInventory')}
             </h2>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative' }}>
                 <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                 <input 
                   type="text" 
-                  placeholder="Search items..." 
+                  placeholder={t('searchItems')} 
                   className="form-control"
                   style={{ paddingLeft: '2.5rem', minWidth: '200px', margin: 0 }}
                   value={searchTerm}
@@ -326,8 +275,8 @@ function Inventory() {
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
               >
-                <option value="All">All Categories</option>
-                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                <option value="All">{t('allCategories')}</option>
+                {CATEGORIES.map(cat => <option key={cat} value={cat}>{t(cat)}</option>)}
               </select>
               <select 
                 className="form-control" 
@@ -335,10 +284,10 @@ function Inventory() {
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
-                <option value="All">All Statuses</option>
-                <option value="In Stock">In Stock</option>
-                <option value="Low Stock">Low Stock</option>
-                <option value="Out of Stock">Out of Stock</option>
+                <option value="All">{t('allStatuses')}</option>
+                <option value="In Stock">{t('inStock')}</option>
+                <option value="Low Stock">{t('lowStock')}</option>
+                <option value="Out of Stock">{t('outOfStock')}</option>
               </select>
             </div>
           </div>
@@ -346,19 +295,19 @@ function Inventory() {
             <table>
               <thead>
                 <tr>
-                  <th style={{ width: '60px' }}>Image</th>
-                  <th>Product</th>
-                  <th>Status</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Actions</th>
+                  <th style={{ width: '60px' }}>{t('image')}</th>
+                  <th>{t('product')}</th>
+                  <th>{t('status')}</th>
+                  <th>{t('qty')}</th>
+                  <th>{t('price')}</th>
+                  <th>{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                      {items.length === 0 ? 'No items in inventory. Add some products to get started!' : 'No items match your search/filter criteria.'}
+                      {items.length === 0 ? t('noItemsInInventory') : t('noItemsMatch')}
                     </td>
                   </tr>
                 ) : (
@@ -374,18 +323,18 @@ function Inventory() {
                         )}
                       </td>
                       <td>
-                        <div style={{ fontWeight: '500', fontSize: '1.05rem' }}>{item.name}</div>
+                        <div style={{ fontWeight: '500', fontSize: '1.05rem' }}>{t(item.name)}</div>
                         <div style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-                          <Tag size={12} /> {item.category || 'Uncategorized'} &bull; {item.description}
+                          <Tag size={12} /> {item.category ? t(item.category) : t('Uncategorized')} &bull; {item.description ? t(item.description) : ''}
                         </div>
                       </td>
                       <td>
                         {item.quantity > 20 ? (
-                          <span className="badge badge-success">In Stock</span>
+                          <span className="badge badge-success">{t('inStock')}</span>
                         ) : item.quantity > 0 ? (
-                          <span className="badge badge-warning">Low Stock</span>
+                          <span className="badge badge-warning">{t('lowStock')}</span>
                         ) : (
-                          <span className="badge badge-danger">Out of Stock</span>
+                          <span className="badge badge-danger">{t('outOfStock')}</span>
                         )}
                       </td>
                       <td style={{ fontWeight: '600' }}>{item.quantity}</td>

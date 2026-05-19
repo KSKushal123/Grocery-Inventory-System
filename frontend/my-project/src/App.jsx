@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import Inventory from './pages/Inventory';
 import DistributorProfile from './pages/DistributorProfile';
 import Shops from './pages/Shops';
 import BusinessOwner from './pages/BusinessOwner';
+import NewInvoice from './pages/NewInvoice';
 import Login from './pages/Login';
 import './index.css';
 
@@ -47,10 +49,11 @@ function AppLayout() {
     <div className="app-container">
       <Navbar />
       <Routes>
-        <Route path="/"        element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><DistributorProfile /></ProtectedRoute>} />
-        <Route path="/shops"   element={<ProtectedRoute><Shops /></ProtectedRoute>} />
-        <Route path="/owners"  element={<ProtectedRoute><BusinessOwner /></ProtectedRoute>} />
+        <Route path="/shops" element={<ProtectedRoute><Shops /></ProtectedRoute>} />
+        <Route path="/new-invoice" element={<ProtectedRoute><NewInvoice /></ProtectedRoute>} />
+        <Route path="/owners" element={<ProtectedRoute><BusinessOwner /></ProtectedRoute>} />
       </Routes>
     </div>
   );
@@ -58,14 +61,16 @@ function AppLayout() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/*"    element={<AppLayout />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/*" element={<AppLayout />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

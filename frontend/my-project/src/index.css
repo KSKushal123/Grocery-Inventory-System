@@ -11,6 +11,17 @@
   --glass-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
+[data-theme="dark"] {
+  --bg-color: #0f172a;
+  --text-color: #f8fafc;
+  --primary-color: #60a5fa;
+  --primary-hover: #93c5fd;
+  --secondary-color: #1e293b;
+  --glass-bg: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(51, 65, 85, 0.8);
+  --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -29,7 +40,7 @@ body {
 }
 
 .app-container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 2.5rem 2rem;
 }
@@ -187,12 +198,39 @@ header p {
 /* Table Styles */
 .table-container {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 480px;
   border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 th {
@@ -204,6 +242,9 @@ th {
   font-size: 0.8rem;
   letter-spacing: 0.05em;
   border-bottom: 2px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 td {
@@ -331,6 +372,8 @@ tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
   padding: 1rem 2rem;
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
@@ -343,7 +386,10 @@ tbody tr:hover td {
 
 .nav-links {
   display: flex;
-  gap: 1rem;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .nav-link {
@@ -357,6 +403,7 @@ tbody tr:hover td {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .nav-link:hover,

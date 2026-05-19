@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, List
 
 class ItemBase(BaseModel):
     name: str
@@ -19,10 +19,14 @@ class Item(ItemBase):
 
 class DistributorBase(BaseModel):
     name: str
-    company: str
-    email: str
-    phone: str
-    address: str
+    contactPerson: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    rating: Optional[float] = 0.0
+    totalDeliveries: Optional[int] = 0
+    memberSince: Optional[str] = None
+    status: Optional[str] = None
 
 class DistributorCreate(DistributorBase):
     pass
@@ -34,10 +38,11 @@ class Distributor(DistributorBase):
 
 class ShopBase(BaseModel):
     name: str
-    owner: str
-    contact: str
-    address: str
-    status: str
+    distance: Optional[str] = None
+    address: Optional[str] = None
+    type: Optional[str] = None
+    status: Optional[str] = None
+    contact: Optional[str] = None
 
 class ShopCreate(ShopBase):
     pass
@@ -88,5 +93,19 @@ class Token(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     token: str
+
+
+class InvoiceItem(BaseModel):
+    name: str
+    quantity: int
+    price: int
+    total: int
+
+class InvoiceRequest(BaseModel):
+    shop_name: str
+    email: str
+    items: List[InvoiceItem]
+    total_amount: int
+
 
 

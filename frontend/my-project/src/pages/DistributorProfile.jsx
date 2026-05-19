@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Phone, Mail, MapPin, Star, Truck, Calendar, ShieldCheck, Edit, Save, Plus, Trash2 } from 'lucide-react';
+import { getDistributors, createDistributor, updateDistributor, deleteDistributor } from '../api';
 
 function DistributorProfile() {
-  const [distributors, setDistributors] = useState([{
-    id: 1,
-    name: "FreshFoods Logistics & Distribution",
-    contactPerson: "Michael Chen",
-    email: "supply@freshfoods.logistics",
-    phone: "+1 (555) 123-4567",
-    location: "Metro Industrial Park, Hub 4",
-    rating: 4.8,
-    totalDeliveries: 1240,
-    memberSince: "2021",
-    status: "Verified Platinum Partner"
-  }]);
+  const [distributors, setDistributors] = useState([
+    {
+      id: "temp-freshfoods",
+      name: "FreshFoods Logistics & Distribution",
+      contactPerson: "Michael Chen",
+      email: "supply@freshfoods.logistics",
+      phone: "+1 (555) 123-4567",
+      location: "Metro Industrial Park, Hub 4",
+      rating: 4.8,
+      totalDeliveries: 1240,
+      memberSince: "2021",
+      status: "Verified Platinum Partner"
+    }
+  ]);
   const [editingId, setEditingId] = useState(null);
 
   const recentDeliveries = [
@@ -22,20 +25,76 @@ function DistributorProfile() {
     { id: "DEL-879", date: "3 Days Ago", items: "Beverages, Snacks", status: "Delivered" },
   ];
 
+  useEffect(() => {
+    fetchDistributors();
+  }, []);
+
+  const fetchDistributors = async () => {
+    try {
+      const response = await getDistributors();
+      if (response.data && response.data.length > 0) {
+        setDistributors(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching distributors:", error);
+    }
+  };
+
   const handleEditChange = (id, field, value) => {
     setDistributors(distributors.map(d => d.id === id ? { ...d, [field]: value } : d));
   };
 
-  const handleDeleteDistributor = (id) => {
-    setDistributors(distributors.filter(d => d.id !== id));
-    if (editingId === id) setEditingId(null);
+  const handleSave = async (distributor) => {
+    try {
+      const payload = {
+        name: distributor.name || "New Distributor",
+        contactPerson: distributor.contactPerson || "",
+        email: distributor.email || "",
+        phone: distributor.phone || "",
+        location: distributor.location || "",
+        rating: distributor.rating || 0.0,
+        totalDeliveries: distributor.totalDeliveries || 0,
+        memberSince: distributor.memberSince || new Date().getFullYear().toString(),
+        status: distributor.status || "New Partner"
+      };
+
+      if (String(distributor.id).startsWith('temp-')) {
+        const response = await createDistributor(payload);
+        setDistributors(prev => prev.map(d => d.id === distributor.id ? response.data : d));
+      } else {
+        const response = await updateDistributor(distributor.id, payload);
+        setDistributors(prev => prev.map(d => d.id === distributor.id ? response.data : d));
+      }
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error saving distributor:", error);
+      alert("Failed to save distributor details. Please try again.");
+    }
+  };
+
+  const handleDeleteDistributor = async (id) => {
+    if (String(id).startsWith('temp-')) {
+      setDistributors(distributors.filter(d => d.id !== id));
+      if (editingId === id) setEditingId(null);
+    } else {
+      if (window.confirm("Are you sure you want to delete this distributor?")) {
+        try {
+          await deleteDistributor(id);
+          setDistributors(distributors.filter(d => d.id !== id));
+          if (editingId === id) setEditingId(null);
+        } catch (error) {
+          console.error("Error deleting distributor:", error);
+          alert("Failed to delete distributor.");
+        }
+      }
+    }
   };
 
   const handleAddDistributor = () => {
-    const newId = Date.now();
+    const tempId = `temp-${Date.now()}`;
     setDistributors([{
-      id: newId,
-      name: "New Distributor",
+      id: tempId,
+      name: "",
       contactPerson: "",
       email: "",
       phone: "",
@@ -45,7 +104,7 @@ function DistributorProfile() {
       memberSince: new Date().getFullYear().toString(),
       status: "New Partner"
     }, ...distributors]);
-    setEditingId(newId);
+    setEditingId(tempId);
   };
 
   return (
@@ -69,7 +128,13 @@ function DistributorProfile() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: '0.25rem' }}>
                   <button 
-                    onClick={() => setEditingId(isEditing ? null : distributor.id)}
+                    onClick={async () => {
+                      if (isEditing) {
+                        await handleSave(distributor);
+                      } else {
+                        setEditingId(distributor.id);
+                      }
+                    }}
                     className="btn-icon" 
                     title={isEditing ? "Save" : "Edit"}
                   >
