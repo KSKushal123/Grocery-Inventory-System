@@ -262,7 +262,7 @@ const Login = () => {
                         <div
                           key={i}
                           className="auth-strength-bar"
-                          style={{ background: i <= strength.score ? strength.color : 'rgba(255,255,255,0.1)' }}
+                          style={{ background: i <= strength.score ? strength.color : 'rgba(0,0,0,0.08)' }}
                         />
                       ))}
                     </div>
