@@ -27,6 +27,8 @@ function NewInvoice() {
   ]);
 
   const [inventoryItems, setInventoryItems] = useState([]);
+  const [distributors, setDistributors] = useState([]);
+  const [availableShops, setAvailableShops] = useState([]);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -37,22 +39,23 @@ function NewInvoice() {
         console.error('Error fetching inventory items:', error);
       }
     };
+
+    const fetchDistributorsAndShops = async () => {
+      try {
+        const [distRes, shopRes] = await Promise.all([
+          api.getDistributors(),
+          api.getShops()
+        ]);
+        setDistributors(distRes.data.map(d => d.name));
+        setAvailableShops(shopRes.data.map(s => s.name));
+      } catch (error) {
+        console.error('Error fetching distributors or shops:', error);
+      }
+    };
+
     fetchItems();
+    fetchDistributorsAndShops();
   }, []);
-
-  const distributors = [
-    'Distributor A',
-    'Distributor B',
-    'Distributor C',
-    'Premium Grocery Dist.'
-  ];
-
-  const availableShops = [
-    "City Center Mart",
-    "Green Valley Organics",
-    "Corner Convenience",
-    "Wholesale Club Direct"
-  ];
 
   const salesManagers = [
     ownerProfile.name,

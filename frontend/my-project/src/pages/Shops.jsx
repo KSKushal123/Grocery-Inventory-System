@@ -3,44 +3,7 @@ import { Store, Map, Navigation, Phone, ExternalLink, Edit, Save, Plus, Trash2 }
 import { getShops, createShop, updateShop, deleteShop } from '../api';
 
 function Shops() {
-  const [shops, setShops] = useState([
-    {
-      id: "temp-citycenter",
-      name: "City Center Mart",
-      distance: "1.2 km",
-      address: "123 Main St, Downtown",
-      type: "Supermarket",
-      status: "Open Now",
-      contact: "(555) 234-5678"
-    },
-    {
-      id: "temp-greenvalley",
-      name: "Green Valley Organics",
-      distance: "2.5 km",
-      address: "45 West Avenue, Suburbia",
-      type: "Specialty Store",
-      status: "Closes at 8 PM",
-      contact: "(555) 987-6543"
-    },
-    {
-      id: "temp-corner",
-      name: "Corner Convenience",
-      distance: "0.5 km",
-      address: "88 East Blvd, Retail District",
-      type: "Convenience",
-      status: "Open 24/7",
-      contact: "(555) 345-6789"
-    },
-    {
-      id: "temp-wholesale",
-      name: "Wholesale Club Direct",
-      distance: "5.0 km",
-      address: "500 Industrial Pkwy",
-      type: "Wholesale",
-      status: "Open Now",
-      contact: "(555) 111-2222"
-    }
-  ]);
+  const [shops, setShops] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
@@ -50,9 +13,7 @@ function Shops() {
   const fetchShops = async () => {
     try {
       const response = await getShops();
-      if (response.data && response.data.length > 0) {
-        setShops(response.data);
-      }
+      setShops(response.data || []);
     } catch (error) {
       console.error("Error fetching shops:", error);
     }

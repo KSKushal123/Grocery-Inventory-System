@@ -1,43 +1,75 @@
 import { useState, useEffect } from 'react';
-import { User, Phone, Mail, MapPin, Star, Truck, Calendar, ShieldCheck, Edit, Save, Plus, Trash2 } from 'lucide-react';
-import { getDistributors, createDistributor, updateDistributor, deleteDistributor } from '../api';
+import { User, Phone, Mail, MapPin, Star, Truck, Calendar, ShieldCheck, Edit, Save, Plus, Trash2, X, Send } from 'lucide-react';
+import { getDistributors, createDistributor, updateDistributor, deleteDistributor, getItems } from '../api';
 
 function DistributorProfile() {
-  const [distributors, setDistributors] = useState([
-    {
-      id: "temp-freshfoods",
-      name: "FreshFoods Logistics & Distribution",
-      contactPerson: "Michael Chen",
-      email: "supply@freshfoods.logistics",
-      phone: "+1 (555) 123-4567",
-      location: "Metro Industrial Park, Hub 4",
-      rating: 4.8,
-      totalDeliveries: 1240,
-      memberSince: "2021",
-      status: "Verified Platinum Partner"
-    }
-  ]);
+  const [distributors, setDistributors] = useState([]);
   const [editingId, setEditingId] = useState(null);
-
-  const recentDeliveries = [
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+  const [recentDeliveries, setRecentDeliveries] = useState([
     { id: "DEL-883", date: "Today", items: "Fresh Produce, Dairy", status: "Delivered" },
     { id: "DEL-882", date: "Yesterday", items: "Canned Goods", status: "Delivered" },
     { id: "DEL-879", date: "3 Days Ago", items: "Beverages, Snacks", status: "Delivered" },
-  ];
+  ]);
+  const [restockForm, setRestockForm] = useState({
+    distributorId: '',
+    itemName: '',
+    quantity: 10,
+    priority: 'Medium',
+    notes: ''
+  });
 
   useEffect(() => {
     fetchDistributors();
+    fetchInventoryItems();
   }, []);
 
   const fetchDistributors = async () => {
     try {
       const response = await getDistributors();
-      if (response.data && response.data.length > 0) {
-        setDistributors(response.data);
-      }
+      setDistributors(response.data || []);
     } catch (error) {
       console.error("Error fetching distributors:", error);
     }
+  };
+
+  const fetchInventoryItems = async () => {
+    try {
+      const response = await getItems();
+      setInventoryItems(response.data || []);
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+    }
+  };
+
+  const handleOpenRestockModal = () => {
+    setIsRestockModalOpen(true);
+    setRestockForm({
+      distributorId: distributors[0]?.id || '',
+      itemName: inventoryItems[0]?.name || 'Produce',
+      quantity: 10,
+      priority: 'Medium',
+      notes: ''
+    });
+  };
+
+  const handleSendRestockRequest = (e) => {
+    e.preventDefault();
+    const selectedDistributor = distributors.find(d => d.id === restockForm.distributorId);
+    const distName = selectedDistributor ? selectedDistributor.name : "Supplier";
+    const itemName = restockForm.itemName;
+    
+    const newRequest = {
+      id: `REQ-${Math.floor(100 + Math.random() * 900)}`,
+      date: "Just Now",
+      items: `${itemName} (x${restockForm.quantity})`,
+      status: "Requested"
+    };
+    
+    setRecentDeliveries([newRequest, ...recentDeliveries]);
+    setIsRestockModalOpen(false);
+    alert(`Restock request successfully sent to ${distName} for ${restockForm.quantity}x ${itemName}!`);
   };
 
   const handleEditChange = (id, field, value) => {
@@ -241,7 +273,9 @@ function DistributorProfile() {
                     <td>{delivery.date}</td>
                     <td>{delivery.items}</td>
                     <td>
-                      <span className="badge badge-success">{delivery.status}</span>
+                      <span className={`badge ${delivery.status === 'Delivered' ? 'badge-success' : 'badge-warning'}`}>
+                        {delivery.status}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -249,11 +283,154 @@ function DistributorProfile() {
             </table>
           </div>
           
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: '2rem' }}>
+          <button 
+            className="btn btn-primary" 
+            style={{ width: '100%', marginTop: '2rem' }}
+            onClick={handleOpenRestockModal}
+          >
             Request New Restock
           </button>
         </div>
       </div>
+
+      {/* Restock Modal */}
+      {isRestockModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div className="glass-panel" style={{
+            width: '100%',
+            maxWidth: '500px',
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '20px',
+            boxShadow: 'var(--glass-shadow)',
+            padding: '2rem',
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setIsRestockModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-color)',
+                opacity: 0.7
+              }}
+            >
+              <X size={20} />
+            </button>
+            
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Truck size={22} className="text-primary-color" />
+              Request New Restock
+            </h2>
+            
+            <form onSubmit={handleSendRestockRequest}>
+              <div className="form-group">
+                <label>Select Distributor</label>
+                <select 
+                  className="form-control" 
+                  value={restockForm.distributorId} 
+                  onChange={e => setRestockForm({...restockForm, distributorId: e.target.value})}
+                  required
+                >
+                  {distributors.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                  {distributors.length === 0 && (
+                    <option value="">No distributors available</option>
+                  )}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Select Product</label>
+                <select 
+                  className="form-control" 
+                  value={restockForm.itemName} 
+                  onChange={e => setRestockForm({...restockForm, itemName: e.target.value})}
+                  required
+                >
+                  {inventoryItems.map(i => (
+                    <option key={i.id} value={i.name}>{i.name} (₹{i.price})</option>
+                  ))}
+                  {inventoryItems.length === 0 && (
+                    <>
+                      <option value="Fresh Produce">Fresh Produce</option>
+                      <option value="Beverages">Beverages</option>
+                      <option value="Snacks">Snacks</option>
+                      <option value="Dairy & Eggs">Dairy & Eggs</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label>Quantity</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    min="1" 
+                    value={restockForm.quantity} 
+                    onChange={e => setRestockForm({...restockForm, quantity: parseInt(e.target.value) || 1})}
+                    required
+                  />
+                </div>
+                <div>
+                  <label>Urgency Level</label>
+                  <select 
+                    className="form-control" 
+                    value={restockForm.priority} 
+                    onChange={e => setRestockForm({...restockForm, priority: e.target.value})}
+                  >
+                    <option value="Low">Low Priority</option>
+                    <option value="Medium">Medium Priority</option>
+                    <option value="High">High Priority</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Additional Notes</label>
+                <textarea 
+                  className="form-control" 
+                  rows="3" 
+                  placeholder="E.g. Please deliver by tomorrow morning..."
+                  value={restockForm.notes} 
+                  onChange={e => setRestockForm({...restockForm, notes: e.target.value})}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                <button type="button" className="btn btn-secondary" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-color)', margin: 0 }} onClick={() => setIsRestockModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                  <Send size={16} /> Send Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
