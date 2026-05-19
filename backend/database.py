@@ -1,6 +1,7 @@
+import os
 from pymongo import MongoClient
 
-MONGO_DETAILS = "mongodb://localhost:27017/"
+MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "mongodb://localhost:27017/"
 
 client = MongoClient(MONGO_DETAILS)
 database = client.grocery_inventory

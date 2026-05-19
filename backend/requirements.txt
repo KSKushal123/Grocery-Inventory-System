@@ -5,3 +5,7 @@ pydantic
 cors
 pymongo
 python-dotenv
+passlib[bcrypt]
+bcrypt
+python-jose[cryptography]
+dnspython
