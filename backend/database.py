@@ -44,6 +44,20 @@ def seed_data():
         return
     check_connection()
     db = database
+
+    # Legacy migration: update documents without owner_email or where owner_email is None to "kskushal123456@gmail.com"
+    collections_to_migrate = ["items", "distributors", "shops", "business_owners", "invoices"]
+    for col_name in collections_to_migrate:
+        try:
+            result = db[col_name].update_many(
+                {"$or": [{"owner_email": {"$exists": False}}, {"owner_email": None}]},
+                {"$set": {"owner_email": "kskushal123456@gmail.com"}}
+            )
+            if result.modified_count > 0:
+                print(f"[GrocerySys Migration] Migrated {result.modified_count} legacy records in '{col_name}' to 'kskushal123456@gmail.com'")
+        except Exception as e:
+            print(f"[GrocerySys Migration] Error migrating '{col_name}': {e}")
+
     if db["distributors"].count_documents({}) == 0:
         db["distributors"].insert_one({
             "name": "FreshFoods Logistics & Distribution",
