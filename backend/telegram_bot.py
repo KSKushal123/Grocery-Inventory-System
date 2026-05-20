@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Dict, Iterable, List, Optional
@@ -218,8 +219,19 @@ def send_telegram_message(chat_id: Any, text: str) -> Dict[str, Any]:
         data=payload,
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=10) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        try:
+            error_json = json.loads(error_body)
+            description = error_json.get("description", error_body)
+        except json.JSONDecodeError:
+            description = error_body
+        raise HTTPException(status_code=400, detail=f"Telegram sendMessage failed: {description}")
+    except urllib.error.URLError as exc:
+        raise HTTPException(status_code=502, detail=f"Telegram sendMessage request failed: {exc.reason}")
 
 
 def set_telegram_webhook(public_url: str, secret: Optional[str] = None) -> Dict[str, Any]:
@@ -227,9 +239,18 @@ def set_telegram_webhook(public_url: str, secret: Optional[str] = None) -> Dict[
     if not token:
         raise HTTPException(status_code=500, detail="TELEGRAM_BOT_TOKEN is not configured")
 
+    if not public_url:
+        raise HTTPException(status_code=400, detail="public_url is required")
+
+    parsed_url = urllib.parse.urlparse(public_url)
+    if parsed_url.scheme.lower() != "https":
+        raise HTTPException(status_code=400, detail="public_url must start with https://")
+    if not parsed_url.netloc:
+        raise HTTPException(status_code=400, detail="public_url must be a valid URL")
+
     webhook_url = public_url.rstrip("/") + "/telegram/webhook"
     if secret:
-        webhook_url += f"/{secret}"
+        webhook_url += f"/{urllib.parse.quote(secret, safe='')}"
 
     payload = urllib.parse.urlencode({"url": webhook_url}).encode("utf-8")
     request = urllib.request.Request(
@@ -237,5 +258,17 @@ def set_telegram_webhook(public_url: str, secret: Optional[str] = None) -> Dict[
         data=payload,
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=10) as response:
-        return json.loads(response.read().decode("utf-8"))
+
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        try:
+            error_json = json.loads(error_body)
+            description = error_json.get("description", error_body)
+        except json.JSONDecodeError:
+            description = error_body
+        raise HTTPException(status_code=400, detail=f"Telegram setWebhook failed: {description}")
+    except urllib.error.URLError as exc:
+        raise HTTPException(status_code=502, detail=f"Telegram setWebhook request failed: {exc.reason}")
