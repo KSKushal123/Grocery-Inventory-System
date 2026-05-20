@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict
 from pymongo import MongoClient
 
 try:
@@ -13,24 +14,34 @@ try:
 except ImportError:
     ca = None
 
-MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") 
+MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
 MONGO_DB_NAME = os.getenv("MONGODB_DB", "grocery_inventory")
 MONGO_TIMEOUT_MS = int(os.getenv("MONGODB_TIMEOUT_MS", "5000"))
 
-client_kwargs = {
+client_kwargs: Dict[str, Any] = {
     "serverSelectionTimeoutMS": MONGO_TIMEOUT_MS
 }
 if ca:
     client_kwargs["tlsCAFile"] = ca
 
-client = MongoClient(MONGO_DETAILS, **client_kwargs)
-database = client[MONGO_DB_NAME]
+try:
+    client = MongoClient(MONGO_DETAILS, **client_kwargs)
+    database = client[MONGO_DB_NAME]
+except Exception as e:
+    print(f"Failed to initialize MongoDB client ({MONGO_DETAILS}): {e}")
+    client = None
+    database = None
 
 def check_connection():
+    if client is None:
+        raise RuntimeError("MongoDB client not initialized")
     client.admin.command("ping")
 
 # Seed default data if empty on startup
 def seed_data():
+    if database is None:
+        print("Skipping seed_data: database not initialized")
+        return
     check_connection()
     db = database
     if db["distributors"].count_documents({}) == 0:
