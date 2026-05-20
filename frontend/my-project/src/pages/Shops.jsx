@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Store, Map, Navigation, Phone, ExternalLink, Edit, Save, Plus, Trash2 } from 'lucide-react';
 import { getShops, createShop, updateShop, deleteShop } from '../api';
+import { useLanguage } from '../context/LanguageContext';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 function Shops() {
+  const { t } = useLanguage();
   const [shops, setShops] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [shopToDelete, setShopToDelete] = useState(null);
 
   useEffect(() => {
     fetchShops();
@@ -48,20 +52,14 @@ function Shops() {
     }
   };
 
-  const handleDeleteShop = async (id) => {
+  const handleDeleteShop = (id) => {
     if (String(id).startsWith('temp-')) {
       setShops(shops.filter(shop => shop.id !== id));
       if (editingId === id) setEditingId(null);
     } else {
-      if (window.confirm("Are you sure you want to delete this shop?")) {
-        try {
-          await deleteShop(id);
-          setShops(shops.filter(shop => shop.id !== id));
-          if (editingId === id) setEditingId(null);
-        } catch (error) {
-          console.error("Error deleting shop:", error);
-          alert("Failed to delete shop.");
-        }
+      const shop = shops.find(s => s.id === id);
+      if (shop) {
+        setShopToDelete(shop);
       }
     }
   };
@@ -192,6 +190,28 @@ function Shops() {
           Open District Map
         </button>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(shopToDelete)}
+        onClose={() => setShopToDelete(null)}
+        onConfirm={async () => {
+          if (!shopToDelete) return;
+          try {
+            await deleteShop(shopToDelete.id);
+            setShops(shops.filter(shop => shop.id !== shopToDelete.id));
+            if (editingId === shopToDelete.id) setEditingId(null);
+            setShopToDelete(null);
+          } catch (error) {
+            console.error("Error deleting shop:", error);
+            alert("Failed to delete shop.");
+          }
+        }}
+        title={t('confirmDelete')}
+        message="Are you sure you want to delete this shop? This action cannot be undone."
+        itemName={shopToDelete ? shopToDelete.name : ''}
+        itemDetails={shopToDelete ? `${shopToDelete.type} • ${shopToDelete.distance} away` : ''}
+        icon={Store}
+      />
     </div>
   );
 }

@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { User, Phone, Mail, MapPin, Star, Truck, Calendar, ShieldCheck, Edit, Save, Plus, Trash2, X, Send } from 'lucide-react';
 import { getDistributors, createDistributor, updateDistributor, deleteDistributor, getItems } from '../api';
+import { useLanguage } from '../context/LanguageContext';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 function DistributorProfile() {
+  const { t } = useLanguage();
   const [distributors, setDistributors] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [distributorToDelete, setDistributorToDelete] = useState(null);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [recentDeliveries, setRecentDeliveries] = useState([
@@ -104,20 +108,14 @@ function DistributorProfile() {
     }
   };
 
-  const handleDeleteDistributor = async (id) => {
+  const handleDeleteDistributor = (id) => {
     if (String(id).startsWith('temp-')) {
       setDistributors(distributors.filter(d => d.id !== id));
       if (editingId === id) setEditingId(null);
     } else {
-      if (window.confirm("Are you sure you want to delete this distributor?")) {
-        try {
-          await deleteDistributor(id);
-          setDistributors(distributors.filter(d => d.id !== id));
-          if (editingId === id) setEditingId(null);
-        } catch (error) {
-          console.error("Error deleting distributor:", error);
-          alert("Failed to delete distributor.");
-        }
+      const distributor = distributors.find(d => d.id === id);
+      if (distributor) {
+        setDistributorToDelete(distributor);
       }
     }
   };
@@ -431,6 +429,28 @@ function DistributorProfile() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(distributorToDelete)}
+        onClose={() => setDistributorToDelete(null)}
+        onConfirm={async () => {
+          if (!distributorToDelete) return;
+          try {
+            await deleteDistributor(distributorToDelete.id);
+            setDistributors(distributors.filter(d => d.id !== distributorToDelete.id));
+            if (editingId === distributorToDelete.id) setEditingId(null);
+            setDistributorToDelete(null);
+          } catch (error) {
+            console.error("Error deleting distributor:", error);
+            alert("Failed to delete distributor.");
+          }
+        }}
+        title={t('confirmDelete')}
+        message="Are you sure you want to delete this distributor? This action cannot be undone."
+        itemName={distributorToDelete ? distributorToDelete.name : ''}
+        itemDetails={distributorToDelete ? `${distributorToDelete.contactPerson} • ${distributorToDelete.location}` : ''}
+        icon={Truck}
+      />
     </div>
   );
 }
