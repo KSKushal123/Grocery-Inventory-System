@@ -11,22 +11,8 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 1000,
-    rolldownOptions: {
-      output: {
-        codeSplitting: {
-          groups: [
-            {
-              name: 'vendor',
-              test: /[\\/]node_modules[\\/]/,
-              minSize: 100000,
-              maxSize: 1000000,
-              priority: 10,
-            }
-          ]
-        }
-      }
-    }
+    chunkSizeWarningLimit: 1500
   }
+
 
 })
