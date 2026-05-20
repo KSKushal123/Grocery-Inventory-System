@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { Package, Plus, Trash2, Edit, IndianRupee, Archive, BarChart2, User, MapPin, Mail, Phone, Award, Search, Filter, Tag, Upload } from 'lucide-react';
 import * as api from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 function Inventory() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const isAdmin = user && user.email === 'kskushal123456@gmail.com';
   const [items, setItems] = useState([]);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '', category: 'Produce', quantity: 0, price: 0, image: '' });
@@ -364,9 +367,11 @@ function Inventory() {
                           <button className="btn-icon" onClick={() => handleEdit(item)} title="Edit">
                             <Edit size={18} />
                           </button>
-                          <button className="btn-icon" style={{ color: '#ef4444' }} onClick={() => handleDelete(item)} title="Delete">
-                            <Trash2 size={18} />
-                          </button>
+                          {isAdmin && (
+                            <button className="btn-icon" style={{ color: '#ef4444' }} onClick={() => handleDelete(item)} title="Delete">
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

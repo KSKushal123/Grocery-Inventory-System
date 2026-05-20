@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { User, Phone, Mail, MapPin, Star, Truck, Calendar, ShieldCheck, Edit, Save, Plus, Trash2, X, Send } from 'lucide-react';
 import { getDistributors, createDistributor, updateDistributor, deleteDistributor, getItems } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 function DistributorProfile() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const isAdmin = user && user.email === 'kskushal123456@gmail.com';
   const [distributors, setDistributors] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [distributorToDelete, setDistributorToDelete] = useState(null);
@@ -170,14 +173,16 @@ function DistributorProfile() {
                   >
                     {isEditing ? <Save size={18} className="text-primary-color" /> : <Edit size={18} />}
                   </button>
-                  <button 
-                    onClick={() => handleDeleteDistributor(distributor.id)}
-                    className="btn-icon" 
-                    title="Delete Distributor"
-                    style={{ color: '#ef4444' }}
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => handleDeleteDistributor(distributor.id)}
+                      className="btn-icon" 
+                      title="Delete Distributor"
+                      style={{ color: '#ef4444' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
                 <div style={{ 
                   width: '80px', height: '80px', borderRadius: '50%', 

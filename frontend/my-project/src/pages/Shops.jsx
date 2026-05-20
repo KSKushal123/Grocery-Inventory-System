@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { Store, Map, Navigation, Phone, ExternalLink, Edit, Save, Plus, Trash2 } from 'lucide-react';
 import { getShops, createShop, updateShop, deleteShop } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 function Shops() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const isAdmin = user && user.email === 'kskushal123456@gmail.com';
   const [shops, setShops] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [shopToDelete, setShopToDelete] = useState(null);
@@ -109,14 +112,16 @@ function Shops() {
               >
                 {isEditing ? <Save size={16} className="text-primary-color" /> : <Edit size={16} />}
               </button>
-              <button 
-                onClick={() => handleDeleteShop(shop.id)}
-                className="btn-icon" 
-                title="Delete Shop"
-                style={{ color: '#ef4444' }}
-              >
-                <Trash2 size={16} />
-              </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => handleDeleteShop(shop.id)}
+                  className="btn-icon" 
+                  title="Delete Shop"
+                  style={{ color: '#ef4444' }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', paddingRight: '4rem' }}>
