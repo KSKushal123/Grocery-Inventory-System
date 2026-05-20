@@ -12,14 +12,21 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom', 'axios'],
-          icons: ['lucide-react'],
-          auth: ['@react-oauth/google', 'jwt-decode'],
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor',
+              test: /[\\/]node_modules[\\/]/,
+              minSize: 100000,
+              maxSize: 1000000,
+              priority: 10,
+            }
+          ]
         }
       }
     }
   }
+
 })
