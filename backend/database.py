@@ -1,11 +1,23 @@
 import os
 from pymongo import MongoClient
 
+try:
+    import certifi
+    ca = certifi.where()
+except ImportError:
+    ca = None
+
 MONGO_DETAILS = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "mongodb+srv://kskushal123456_db_user:fGlFgx8YhM5ej5tv@cluster0.qtzjhnv.mongodb.net/?appName=Cluster0"
 MONGO_DB_NAME = os.getenv("MONGODB_DB", "grocery_inventory")
 MONGO_TIMEOUT_MS = int(os.getenv("MONGODB_TIMEOUT_MS", "5000"))
 
-client = MongoClient(MONGO_DETAILS, serverSelectionTimeoutMS=MONGO_TIMEOUT_MS)
+client_kwargs = {
+    "serverSelectionTimeoutMS": MONGO_TIMEOUT_MS
+}
+if ca:
+    client_kwargs["tlsCAFile"] = ca
+
+client = MongoClient(MONGO_DETAILS, **client_kwargs)
 database = client[MONGO_DB_NAME]
 
 def check_connection():
