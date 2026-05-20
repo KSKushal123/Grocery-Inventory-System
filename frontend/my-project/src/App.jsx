@@ -9,6 +9,7 @@ import Shops from './pages/Shops';
 import BusinessOwner from './pages/BusinessOwner';
 import NewInvoice from './pages/NewInvoice';
 import Login from './pages/Login';
+import AdminPanel from './pages/AdminPanel';
 import './index.css';
 
 
@@ -55,6 +56,7 @@ function AppLayout() {
         <Route path="/shops" element={<ProtectedRoute><Shops /></ProtectedRoute>} />
         <Route path="/new-invoice" element={<ProtectedRoute><NewInvoice /></ProtectedRoute>} />
         <Route path="/owners" element={<ProtectedRoute><BusinessOwner /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       </Routes>
       <AIBot />
     </div>

@@ -3,25 +3,52 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 console.log('[GrocerySys API] Connecting to:', API_URL);
 
-export const getItems = () => axios.get(`${API_URL}/items/`);
-export const createItem = (item) => axios.post(`${API_URL}/items/`, item);
-export const updateItem = (id, item) => axios.put(`${API_URL}/items/${id}`, item);
-export const deleteItem = (id) => axios.delete(`${API_URL}/items/${id}`);
+// Create a configured axios instance
+const api = axios.create({
+  baseURL: API_URL
+});
 
-export const getDistributors = () => axios.get(`${API_URL}/distributors/`);
-export const createDistributor = (distributor) => axios.post(`${API_URL}/distributors/`, distributor);
-export const updateDistributor = (id, distributor) => axios.put(`${API_URL}/distributors/${id}`, distributor);
-export const deleteDistributor = (id) => axios.delete(`${API_URL}/distributors/${id}`);
+// Request interceptor to automatically add the Authorization header
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
-export const getShops = () => axios.get(`${API_URL}/shops/`);
-export const createShop = (shop) => axios.post(`${API_URL}/shops/`, shop);
-export const updateShop = (id, shop) => axios.put(`${API_URL}/shops/${id}`, shop);
-export const deleteShop = (id) => axios.delete(`${API_URL}/shops/${id}`);
+// Scoped Items endpoints
+export const getItems = () => api.get('/items/');
+export const createItem = (item) => api.post('/items/', item);
+export const updateItem = (id, item) => api.put(`/items/${id}`, item);
+export const deleteItem = (id) => api.delete(`/items/${id}`);
 
-export const getBusinessOwners = () => axios.get(`${API_URL}/business_owners/`);
-export const createBusinessOwner = (owner) => axios.post(`${API_URL}/business_owners/`, owner);
+// Scoped Distributors endpoints
+export const getDistributors = () => api.get('/distributors/');
+export const createDistributor = (distributor) => api.post('/distributors/', distributor);
+export const updateDistributor = (id, distributor) => api.put(`/distributors/${id}`, distributor);
+export const deleteDistributor = (id) => api.delete(`/distributors/${id}`);
 
-export const mailInvoice = (invoice) => axios.post(`${API_URL}/mail-invoice/`, invoice);
+// Scoped Shops endpoints
+export const getShops = () => api.get('/shops/');
+export const createShop = (shop) => api.post('/shops/', shop);
+export const updateShop = (id, shop) => api.put(`/shops/${id}`, shop);
+export const deleteShop = (id) => api.delete(`/shops/${id}`);
 
-export const getInvoices = () => axios.get(`${API_URL}/invoices/`);
-export const createInvoice = (invoice) => axios.post(`${API_URL}/invoices/`, invoice);
+// Scoped Business Owners endpoints
+export const getBusinessOwners = () => api.get('/business_owners/');
+export const createBusinessOwner = (owner) => api.post('/business_owners/', owner);
+
+// Mail Invoice (mocked email, DB stored)
+export const mailInvoice = (invoice) => api.post('/mail-invoice/', invoice);
+
+// Scoped Invoices endpoints
+export const getInvoices = () => api.get('/invoices/');
+export const createInvoice = (invoice) => api.post('/invoices/', invoice);
+
+// Admin User Management endpoints
+export const getAdminUsers = () => api.get('/admin/users');
+export const approveUser = (email) => api.put(`/admin/users/${email}/approve`);
+export const rejectUser = (email) => api.put(`/admin/users/${email}/reject`);

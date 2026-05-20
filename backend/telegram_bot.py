@@ -31,7 +31,10 @@ def _find_items(db: Database, query: str, limit: int = 5) -> List[Dict[str, Any]
     pattern = re.compile(re.escape(query), re.IGNORECASE)
     return list(
         db["items"]
-        .find({"$or": [{"name": pattern}, {"category": pattern}, {"description": pattern}]})
+        .find({
+            "owner_email": "kskushal123456@gmail.com",
+            "$or": [{"name": pattern}, {"category": pattern}, {"description": pattern}]
+        })
         .sort("_id", -1)
         .limit(limit)
     )
@@ -48,7 +51,7 @@ def _format_items(items: Iterable[Dict[str, Any]]) -> str:
 
 
 def _inventory_summary(db: Database) -> str:
-    items = list(db["items"].find())
+    items = list(db["items"].find({"owner_email": "kskushal123456@gmail.com"}))
     total_quantity = sum(int(item.get("quantity") or 0) for item in items)
     total_value = sum(
         int(item.get("quantity") or 0) * float(item.get("price") or 0)
@@ -75,11 +78,11 @@ def _project_summary(db: Database) -> str:
         "Grocery Inventory System details\n"
         "- Backend: FastAPI with MongoDB\n"
         "- Frontend: React/Vite inventory dashboard\n"
-        f"- Products: {db['items'].count_documents({})}\n"
-        f"- Distributors: {db['distributors'].count_documents({})}\n"
-        f"- Partner shops: {db['shops'].count_documents({})}\n"
-        f"- Business owners: {db['business_owners'].count_documents({})}\n"
-        f"- Invoices: {db['invoices'].count_documents({})}\n\n"
+        f"- Products: {db['items'].count_documents({'owner_email': 'kskushal123456@gmail.com'})}\n"
+        f"- Distributors: {db['distributors'].count_documents({'owner_email': 'kskushal123456@gmail.com'})}\n"
+        f"- Partner shops: {db['shops'].count_documents({'owner_email': 'kskushal123456@gmail.com'})}\n"
+        f"- Business owners: {db['business_owners'].count_documents({'owner_email': 'kskushal123456@gmail.com'})}\n"
+        f"- Invoices: {db['invoices'].count_documents({'owner_email': 'kskushal123456@gmail.com'})}\n\n"
         "Ask things like: stock summary, low stock, out of stock, find rice, shops, distributors, owners, or invoices."
     )
 
@@ -91,7 +94,7 @@ def _list_collection(
     formatter,
     limit: int = 5,
 ) -> str:
-    rows = list(db[collection].find().sort("_id", -1).limit(limit))
+    rows = list(db[collection].find({"owner_email": "kskushal123456@gmail.com"}).sort("_id", -1).limit(limit))
     if not rows:
         return f"No {title.lower()} found yet."
     return f"{title}\n" + "\n".join(formatter(row) for row in rows)
@@ -116,14 +119,14 @@ def build_project_reply(message: str, db: Database) -> str:
     if "low stock" in lower:
         items = list(
             db["items"]
-            .find({"quantity": {"$gt": 0, "$lte": LOW_STOCK_LIMIT}})
+            .find({"owner_email": "kskushal123456@gmail.com", "quantity": {"$gt": 0, "$lte": LOW_STOCK_LIMIT}})
             .sort("quantity", 1)
             .limit(8)
         )
         return "No products are low stock right now." if not items else "Low stock products\n" + _format_items(items)
 
     if "out of stock" in lower:
-        items = list(db["items"].find({"quantity": 0}).sort("_id", -1).limit(8))
+        items = list(db["items"].find({"owner_email": "kskushal123456@gmail.com", "quantity": 0}).sort("_id", -1).limit(8))
         return "No products are out of stock." if not items else "Out of stock products\n" + _format_items(items)
 
     find_match = re.search(r"\b(?:find|search|show item|show product)\s+(.+)", lower)
@@ -133,7 +136,7 @@ def build_project_reply(message: str, db: Database) -> str:
         return f"No matching products found for '{term}'." if not items else f"Products matching '{term}'\n" + _format_items(items)
 
     if "product" in lower or "inventory" in lower or "items" in lower:
-        latest_items = list(db["items"].find().sort("_id", -1).limit(8))
+        latest_items = list(db["items"].find({"owner_email": "kskushal123456@gmail.com"}).sort("_id", -1).limit(8))
         return "No products found yet." if not latest_items else "Latest products\n" + _format_items(latest_items)
 
     if "shop" in lower or "store" in lower:

@@ -54,7 +54,8 @@ def seed_data():
             "rating": 4.8,
             "totalDeliveries": 1240,
             "memberSince": "2021",
-            "status": "Verified Platinum Partner"
+            "status": "Verified Platinum Partner",
+            "owner_email": "kskushal123456@gmail.com"
         })
     if db["shops"].count_documents({}) == 0:
         db["shops"].insert_many([
@@ -64,7 +65,8 @@ def seed_data():
                 "address": "123 Main St, Downtown",
                 "type": "Supermarket",
                 "status": "Open Now",
-                "contact": "(555) 234-5678"
+                "contact": "(555) 234-5678",
+                "owner_email": "kskushal123456@gmail.com"
             },
             {
                 "name": "Green Valley Organics",
@@ -72,7 +74,8 @@ def seed_data():
                 "address": "45 West Avenue, Suburbia",
                 "type": "Specialty Store",
                 "status": "Closes at 8 PM",
-                "contact": "(555) 987-6543"
+                "contact": "(555) 987-6543",
+                "owner_email": "kskushal123456@gmail.com"
             },
             {
                 "name": "Corner Convenience",
@@ -80,7 +83,8 @@ def seed_data():
                 "address": "88 East Blvd, Retail District",
                 "type": "Convenience",
                 "status": "Open 24/7",
-                "contact": "(555) 345-6789"
+                "contact": "(555) 345-6789",
+                "owner_email": "kskushal123456@gmail.com"
             },
             {
                 "name": "Wholesale Club Direct",
@@ -88,7 +92,8 @@ def seed_data():
                 "address": "500 Industrial Pkwy",
                 "type": "Wholesale",
                 "status": "Open Now",
-                "contact": "(555) 111-2222"
+                "contact": "(555) 111-2222",
+                "owner_email": "kskushal123456@gmail.com"
             }
         ])
 

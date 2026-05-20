@@ -73,6 +73,7 @@ class BusinessOwner(BusinessOwnerBase):
 class UserBase(BaseModel):
     email: str
     name: str
+    status: Optional[str] = "approved"
 
 class UserCreate(UserBase):
     password: str

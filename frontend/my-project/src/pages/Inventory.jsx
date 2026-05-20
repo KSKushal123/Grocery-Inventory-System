@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Trash2, Edit, IndianRupee, Archive, BarChart2, User, MapPin, Mail, Phone, Award, Search, Filter, Tag, Upload } from 'lucide-react';
+import { Package, Plus, Trash2, Edit, IndianRupee, Archive, BarChart2, User, MapPin, Mail, Phone, Award, Search, Filter, Tag, Upload, AlertTriangle } from 'lucide-react';
 import * as api from '../api';
 import { useLanguage } from '../context/LanguageContext';
 
 function Inventory() {
   const { t } = useLanguage();
   const [items, setItems] = useState([]);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '', category: 'Produce', quantity: 0, price: 0, image: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -107,9 +108,11 @@ function Inventory() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
     try {
-      await api.deleteItem(id);
+      await api.deleteItem(itemToDelete.id);
+      setItemToDelete(null);
       fetchItems();
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -367,7 +370,7 @@ function Inventory() {
                           <button className="btn-icon" onClick={() => handleEdit(item)} title="Edit">
                             <Edit size={18} />
                           </button>
-                          <button className="btn-icon" style={{ color: '#ef4444' }} onClick={() => handleDelete(item.id)} title="Delete">
+                          <button className="btn-icon" style={{ color: '#ef4444' }} onClick={() => setItemToDelete(item)} title="Delete">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -380,6 +383,45 @@ function Inventory() {
           </div>
         </div>
       </div>
+
+      {itemToDelete && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <div style={{ padding: '0.5rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center' }}>
+                <AlertTriangle size={24} />
+              </div>
+              <h2 className="modal-title">{t('confirmDelete')}</h2>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '1.25rem' }}>
+                {t('deleteWarning')}
+              </p>
+              <div style={{ padding: '0.75rem 1rem', borderRadius: '12px', background: 'var(--secondary-color)', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid var(--glass-border)' }}>
+                {itemToDelete.image ? (
+                  <img src={itemToDelete.image} alt={itemToDelete.name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Package size={20} style={{ color: '#94a3b8' }} />
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-color)' }}>{t(itemToDelete.name)}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{t(itemToDelete.category) || itemToDelete.category}</div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" style={{ background: 'var(--secondary-color)', color: 'var(--text-color)', margin: 0 }} onClick={() => setItemToDelete(null)}>
+                {t('cancel')}
+              </button>
+              <button className="btn btn-danger" style={{ margin: 0 }} onClick={handleConfirmDelete}>
+                {t('delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

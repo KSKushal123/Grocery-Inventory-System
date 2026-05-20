@@ -60,6 +60,11 @@ const translations = {
     // Messages
     'noItemsMatch': 'No items match your search/filter criteria.',
     'noItemsInInventory': 'No items in inventory. Add some products to get started!',
+    confirmDelete: 'Confirm Delete',
+    deleteWarning: 'Are you sure you want to delete this item? This action cannot be undone.',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    approvals: 'Approvals',
     // Common Products (Demo)
     'Organic Apples': 'Organic Apples',
     'Fresh and organic': 'Fresh and organic'
@@ -123,6 +128,11 @@ const translations = {
     // Messages
     'noItemsMatch': 'ನಿಮ್ಮ ಹುಡುಕಾಟ/ಫಿಲ್ಟರ್‌ಗೆ ಯಾವುದೇ ಐಟಂಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ.',
     'noItemsInInventory': 'ದಾಸ್ತಾನಿನಲ್ಲಿ ಯಾವುದೇ ಐಟಂಗಳಿಲ್ಲ. ಪ್ರಾರಂಭಿಸಲು ಕೆಲವು ಉತ್ಪನ್ನಗಳನ್ನು ಸೇರಿಸಿ!',
+    confirmDelete: 'ಅಳಿಸುವುದನ್ನು ಖಚಿತಪಡಿಸಿ',
+    deleteWarning: 'ಈ ಐಟಂ ಅನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ? ಈ ಕ್ರಿಯೆಯನ್ನು ಹಿಂಪಡೆಯಲು ಸಾಧ್ಯವಿಲ್ಲ.',
+    cancel: 'ರದ್ದುಮಾಡಿ',
+    delete: 'ಅಳಿಸಿ',
+    approvals: 'ಅನುಮೋದನೆಗಳು',
     // Common Products
     'Organic Apples': 'ಸಾವಯವ ಸೇಬುಗಳು',
     'Fresh and organic': 'ತಾಜಾ ಮತ್ತು ಸಾವಯವ'
@@ -186,6 +196,11 @@ const translations = {
     // Messages
     'noItemsMatch': 'உங்கள் தேடலுக்கு எந்த பொருட்களும் பொருந்தவில்லை.',
     'noItemsInInventory': 'இருப்பில் பொருட்கள் இல்லை. தொடங்க சிலவற்றைச் சேர்க்கவும்!',
+    confirmDelete: 'நீக்குவதை உறுதிப்படுத்து',
+    deleteWarning: 'இந்த உருப்படியை நிச்சயமாக நீக்க விரும்புகிறீர்களா? இந்தச் செயலைத் திரும்பப் பெற முடியாது.',
+    cancel: 'ரத்துசெய்',
+    delete: 'நீக்கு',
+    approvals: 'அங்கீகாரங்கள்',
     // Common Products
     'Organic Apples': 'ஆர்கானிக் ஆப்பிள்கள்',
     'Fresh and organic': 'புதிய மற்றும் ஆர்கானிக்'

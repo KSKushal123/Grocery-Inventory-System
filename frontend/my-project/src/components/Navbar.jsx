@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Package, User, Store, Users, LogOut, ShoppingCart, FileText } from 'lucide-react';
+import { Package, User, Store, Users, LogOut, ShoppingCart, FileText, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import ProfileDrawer from './ProfileDrawer';
@@ -18,6 +18,7 @@ function Navbar() {
   else if (location.pathname === '/shops') pageTitle = t('nearbyShops');
   else if (location.pathname === '/new-invoice') pageTitle = t('newInvoice');
   else if (location.pathname === '/owners') pageTitle = t('businessOwners');
+  else if (location.pathname === '/admin') pageTitle = t('approvals') || 'Approvals';
 
   const handleLogout = () => {
     logout();
@@ -56,6 +57,11 @@ function Navbar() {
           <NavLink to="/owners" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Users size={18} /> {t('businessOwners')}
           </NavLink>
+          {user && user.email === 'kskushal123456@gmail.com' && (
+            <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <ShieldCheck size={18} /> {t('approvals') || 'Approvals'}
+            </NavLink>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
