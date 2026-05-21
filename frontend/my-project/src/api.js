@@ -19,6 +19,23 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// Response interceptor to handle token expiration/401 errors
+api.interceptors.response.use((response) => {
+  return response;
+}, (error) => {
+  if (error.response && error.response.status === 401) {
+    console.warn('[GrocerySys API] Authentication failed (401). Session expired.');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Redirect to login page if we aren't already there
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login?expired=true';
+    }
+  }
+  return Promise.reject(error);
+});
+
 // Scoped Items endpoints
 export const getItems = () => api.get('/items/');
 export const createItem = (item) => api.post('/items/', item);

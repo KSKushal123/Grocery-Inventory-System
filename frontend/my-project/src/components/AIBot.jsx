@@ -260,6 +260,20 @@ function extractInvoicePayload(command) {
   };
 }
 
+function extractUpdatePayload(command) {
+  let match = command.match(/\b(?:update|change|set)\s+(?:the\s+)?(?:product\s+|item\s+)?(.+?)\s+(?:quantity|qty|stock)\s+(?:to\s+)?(\d+)/i);
+  if (match) {
+    return { name: match[1].trim(), quantity: parseInt(match[2], 10) };
+  }
+  
+  match = command.match(/\b(?:update|change|set)\s+(?:the\s+)?(?:quantity|qty|stock)\s+(?:of\s+)?(.+?)\s+(?:to\s+)?(\d+)/i);
+  if (match) {
+    return { name: match[1].trim(), quantity: parseInt(match[2], 10) };
+  }
+  
+  return null;
+}
+
 function getTranscript(event) {
   return Array.from(event.results)
     .slice(event.resultIndex)
@@ -456,6 +470,45 @@ function AIBot() {
         }
         setPendingInvoice(payload);
         addBotMessage(`Drafting invoice${payload.formData.shopName ? ` for ${payload.formData.shopName}` : ''}. Please review it and click Create when ready.`);
+        return;
+      }
+
+      const isUpdateProduct = /\b(update|change|set)\b.*\b(quantity|qty|stock)\b/i.test(lower);
+
+      if (isUpdateProduct) {
+        const payload = extractUpdatePayload(command);
+        if (!payload) {
+          addBotMessage('Please say it like: update milk quantity to 100 or change rice stock to 50.');
+          return;
+        }
+
+        const itemsResponse = await api.getItems();
+        const items = itemsResponse.data || [];
+        const targetName = payload.name.toLowerCase();
+        
+        let matchedItem = items.find(item => item.name.toLowerCase() === targetName);
+        if (!matchedItem) {
+          matchedItem = items.find(item => item.name.toLowerCase().includes(targetName) || targetName.includes(item.name.toLowerCase()));
+        }
+
+        if (!matchedItem) {
+          addBotMessage(`I could not find a product named "${payload.name}" in your inventory. Make sure it exists first.`);
+          return;
+        }
+
+        const updatedItem = {
+          name: matchedItem.name,
+          category: matchedItem.category || 'Produce',
+          price: matchedItem.price || 0,
+          description: matchedItem.description || '',
+          image: matchedItem.image || '',
+          quantity: payload.quantity
+        };
+
+        await api.updateItem(matchedItem.id, updatedItem);
+        refreshInventory();
+        goTo('/');
+        addBotMessage(`🎉 Successfully updated quantity of "${matchedItem.name}" to ${payload.quantity}!`);
         return;
       }
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Mail, Lock, User, Eye, EyeOff, ShoppingCart, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
@@ -19,7 +19,16 @@ const Login = () => {
   const [animating, setAnimating] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('expired') === 'true') {
+      setError('Your login session has expired. Please sign in again.');
+      navigate('/login', { replace: true });
+    }
+  }, [location.search, navigate]);
 
 
 

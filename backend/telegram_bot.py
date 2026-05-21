@@ -172,6 +172,32 @@ def build_project_reply(message: str, db: Database) -> str:
             "Try: project details, stock summary, low stock, out of stock, find milk, shops, distributors, owners, invoices."
         )
 
+    # Check for update item quantity command
+    is_update = bool(re.search(r'\b(update|change|set)\b.*\b(quantity|qty|stock)\b', lower))
+    if is_update:
+        match = re.search(r'\b(?:update|change|set)\s+(?:the\s+)?(?:product\s+|item\s+)?(.+?)\s+(?:quantity|qty|stock)\s+(?:to\s+)?(\d+)', command, re.IGNORECASE)
+        if not match:
+            match = re.search(r'\b(?:update|change|set)\s+(?:the\s+)?(?:quantity|qty|stock)\s+(?:of\s+)?(.+?)\s+(?:to\s+)?(\d+)', command, re.IGNORECASE)
+            
+        if match:
+            item_name = match.group(1).strip()
+            new_qty = int(match.group(2))
+            
+            pattern = re.compile(f"^{re.escape(item_name)}$", re.IGNORECASE)
+            matched_item = db["items"].find_one({"owner_email": "kskushal123456@gmail.com", "name": pattern})
+            if not matched_item:
+                pattern_sub = re.compile(re.escape(item_name), re.IGNORECASE)
+                matched_item = db["items"].find_one({"owner_email": "kskushal123456@gmail.com", "name": pattern_sub})
+                
+            if matched_item:
+                db["items"].update_one(
+                    {"_id": matched_item["_id"]},
+                    {"$set": {"quantity": new_qty}}
+                )
+                return f"🎉 Successfully updated quantity of '{matched_item['name']}' to {new_qty}!"
+            else:
+                return f"I could not find a product named '{item_name}' in your inventory."
+
     if lower.startswith("add ") or lower.startswith("create "):
         is_other_entity = any(
             x in lower
