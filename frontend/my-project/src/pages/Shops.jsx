@@ -190,7 +190,10 @@ function Shops() {
         <p style={{ color: '#475569', marginBottom: '1.5rem', maxWidth: '500px', margin: '0 auto 1.5rem' }}>
           View real-time inventory sharing status, competitor pricing, and optimized delivery routes in your district.
         </p>
-        <button className="btn btn-primary">
+        <button 
+          className="btn btn-primary"
+          onClick={() => window.open('https://www.google.com/maps/dir/Mandya/Malavalli', '_blank', 'noopener,noreferrer')}
+        >
           <ExternalLink size={18} />
           Open District Map
         </button>
