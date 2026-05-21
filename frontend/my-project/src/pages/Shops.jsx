@@ -173,7 +173,15 @@ function Shops() {
                 <span style={{ fontSize: '0.85rem', color: shop.status.includes('Open') ? '#059669' : '#64748b', fontWeight: '600' }}>
                   {shop.status}
                 </span>
-                <button className="btn-icon" title="Get Directions" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary-color)' }}>
+                <button 
+                  className="btn-icon" 
+                  title="Get Directions" 
+                  style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary-color)' }}
+                  onClick={() => {
+                    const destination = shop.address ? `${shop.name}, ${shop.address}` : shop.name;
+                    window.open(`https://www.google.com/maps/dir/Mandya/${encodeURIComponent(destination)}`, '_blank', 'noopener,noreferrer');
+                  }}
+                >
                   <Navigation size={16} />
                 </button>
               </div>
