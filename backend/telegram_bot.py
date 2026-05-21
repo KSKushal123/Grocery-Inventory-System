@@ -172,6 +172,26 @@ def build_project_reply(message: str, db: Database) -> str:
             "Try: project details, stock summary, low stock, out of stock, find milk, shops, distributors, owners, invoices."
         )
 
+    # Check for delete item command
+    is_delete = bool(re.search(r'\b(delete|remove|destroy)\b', lower)) and not any(
+        x in lower for x in ["shop", "store", "distributor", "supplier", "owner", "invoice", "bill"]
+    )
+    if is_delete:
+        match = re.search(r'\b(?:delete|remove|destroy)\s+(?:a\s+|the\s+)?(?:product\s+|item\s+)?(.+?)$', command, re.IGNORECASE)
+        if match:
+            item_name = match.group(1).strip()
+            pattern = re.compile(f"^{re.escape(item_name)}$", re.IGNORECASE)
+            matched_item = db["items"].find_one({"owner_email": "kskushal123456@gmail.com", "name": pattern})
+            if not matched_item:
+                pattern_sub = re.compile(re.escape(item_name), re.IGNORECASE)
+                matched_item = db["items"].find_one({"owner_email": "kskushal123456@gmail.com", "name": pattern_sub})
+                
+            if matched_item:
+                db["items"].delete_one({"_id": matched_item["_id"]})
+                return f"🗑️ Successfully deleted product '{matched_item['name']}' from your inventory!"
+            else:
+                return f"I could not find a product named '{item_name}' in your inventory."
+
     # Check for update item quantity command
     is_update = bool(re.search(r'\b(update|change|set)\b.*\b(quantity|qty|stock)\b', lower))
     if is_update:

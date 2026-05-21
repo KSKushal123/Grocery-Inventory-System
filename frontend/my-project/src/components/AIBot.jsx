@@ -274,6 +274,11 @@ function extractUpdatePayload(command) {
   return null;
 }
 
+function extractDeletePayload(command) {
+  const match = command.match(/\b(?:delete|remove|destroy)\s+(?:a\s+|the\s+)?(?:product\s+|item\s+)?(.+?)$/i);
+  return match ? match[1].trim() : null;
+}
+
 function getTranscript(event) {
   return Array.from(event.results)
     .slice(event.resultIndex)
@@ -509,6 +514,37 @@ function AIBot() {
         refreshInventory();
         goTo('/');
         addBotMessage(`🎉 Successfully updated quantity of "${matchedItem.name}" to ${payload.quantity}!`);
+        return;
+      }
+
+      const isDeleteProduct = /\b(delete|remove|destroy)\b/i.test(lower) && 
+                              !['shop', 'store', 'distributor', 'supplier', 'owner', 'invoice', 'bill'].some(x => lower.includes(x));
+
+      if (isDeleteProduct) {
+        const productName = extractDeletePayload(command);
+        if (!productName) {
+          addBotMessage('Please say it like: delete product milk or remove rice.');
+          return;
+        }
+
+        const itemsResponse = await api.getItems();
+        const items = itemsResponse.data || [];
+        const targetName = productName.toLowerCase();
+        
+        let matchedItem = items.find(item => item.name.toLowerCase() === targetName);
+        if (!matchedItem) {
+          matchedItem = items.find(item => item.name.toLowerCase().includes(targetName) || targetName.includes(item.name.toLowerCase()));
+        }
+
+        if (!matchedItem) {
+          addBotMessage(`I could not find a product named "${productName}" in your inventory.`);
+          return;
+        }
+
+        await api.deleteItem(matchedItem.id);
+        refreshInventory();
+        goTo('/');
+        addBotMessage(`🗑️ Successfully deleted product "${matchedItem.name}" from your inventory!`);
         return;
       }
 
