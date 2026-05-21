@@ -237,6 +237,32 @@ def google_auth(request_data: schemas.GoogleLoginRequest, db: Database = Depends
 
 
 
+@app.get("/items/search-image")
+def search_image_endpoint(q: str, current_user = Depends(get_current_user)):
+    import html
+    if not q:
+        raise HTTPException(status_code=400, detail="Query parameter 'q' is required")
+    
+    query = q.strip()
+    query_encoded = urllib.parse.quote(query + " product")
+    url = f"https://www.bing.com/images/search?q={query_encoded}"
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            resp_html = response.read().decode('utf-8', errors='ignore')
+            decoded_html = html.unescape(resp_html)
+            matches = re.findall(r'"murl"\s*:\s*"([^"]+)"', decoded_html)
+            if matches:
+                return {"image_url": matches[0]}
+            return {"image_url": ""}
+    except Exception as e:
+        print(f"Error searching image: {e}")
+        return {"image_url": ""}
+
+
 @app.get("/items/", response_model=List[schemas.Item])
 def read_items(skip: int = 0, limit: int = 1000, db: Database = Depends(get_db), current_user = Depends(get_current_user)):
     items = list(db["items"].find({"owner_email": current_user.email}).sort("_id", -1).skip(skip).limit(limit))

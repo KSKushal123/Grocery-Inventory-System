@@ -24,6 +24,7 @@ export const getItems = () => api.get('/items/');
 export const createItem = (item) => api.post('/items/', item);
 export const updateItem = (id, item) => api.put(`/items/${id}`, item);
 export const deleteItem = (id) => api.delete(`/items/${id}`);
+export const searchImage = (query) => api.get(`/items/search-image?q=${encodeURIComponent(query)}`);
 
 // Scoped Distributors endpoints
 export const getDistributors = () => api.get('/distributors/');

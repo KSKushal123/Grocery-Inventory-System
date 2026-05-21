@@ -12,6 +12,67 @@ from pymongo.database import Database
 
 LOW_STOCK_LIMIT = 20
 
+GROCERY_CATALOG = {
+    "milk": {"category": "Dairy", "price": 60, "description": "Fresh, nutritious farm whole milk."},
+    "bread": {"category": "Bakery", "price": 40, "description": "Soft, freshly baked sliced white bread."},
+    "egg": {"category": "Dairy", "price": 6, "description": "High-protein farm fresh organic eggs."},
+    "eggs": {"category": "Dairy", "price": 60, "description": "High-protein farm fresh organic eggs (pack of 10)."},
+    "butter": {"category": "Dairy", "price": 55, "description": "Rich and creamy salted butter."},
+    "cheese": {"category": "Dairy", "price": 120, "description": "Premium cheddar cheese slices."},
+    "rice": {"category": "Pantry", "price": 80, "description": "Premium long-grain Basmati rice."},
+    "wheat": {"category": "Pantry", "price": 45, "description": "Whole wheat flour (Atta) for healthy chapatis."},
+    "flour": {"category": "Pantry", "price": 45, "description": "Premium quality all-purpose flour."},
+    "sugar": {"category": "Pantry", "price": 50, "description": "Fine refined white sugar."},
+    "salt": {"category": "Pantry", "price": 20, "description": "Iodized cooking salt."},
+    "oil": {"category": "Pantry", "price": 150, "description": "Healthy refined sunflower cooking oil."},
+    "tea": {"category": "Beverages", "price": 90, "description": "Premium aromatic black tea leaves."},
+    "coffee": {"category": "Beverages", "price": 180, "description": "Rich and aromatic instant coffee powder."},
+    "juice": {"category": "Beverages", "price": 110, "description": "100% pure and refreshing fruit juice."},
+    "water": {"category": "Beverages", "price": 20, "description": "Pure mineral drinking water bottle."},
+    "apple": {"category": "Produce", "price": 160, "description": "Crisp and sweet fresh red apples."},
+    "apples": {"category": "Produce", "price": 160, "description": "Crisp and sweet fresh red apples."},
+    "banana": {"category": "Produce", "price": 60, "description": "Fresh and sweet yellow bananas."},
+    "bananas": {"category": "Produce", "price": 60, "description": "Fresh and sweet yellow bananas."},
+    "potato": {"category": "Produce", "price": 30, "description": "Fresh organic farm potatoes."},
+    "potatoes": {"category": "Produce", "price": 30, "description": "Fresh organic farm potatoes."},
+    "tomato": {"category": "Produce", "price": 40, "description": "Fresh, juicy red tomatoes."},
+    "tomatoes": {"category": "Produce", "price": 40, "description": "Fresh, juicy red tomatoes."},
+    "onion": {"category": "Produce", "price": 35, "description": "Fresh, pungent red onions."},
+    "onions": {"category": "Produce", "price": 35, "description": "Fresh, pungent red onions."},
+    "garlic": {"category": "Produce", "price": 120, "description": "Fresh and aromatic garlic bulbs."},
+    "ginger": {"category": "Produce", "price": 100, "description": "Fresh spicy ginger root."},
+    "chicken": {"category": "Meat & Seafood", "price": 220, "description": "Freshly cut, tender skinless chicken."},
+    "fish": {"category": "Meat & Seafood", "price": 350, "description": "Freshly caught river fish."},
+    "mutton": {"category": "Meat & Seafood", "price": 700, "description": "Tender and juicy fresh mutton cuts."},
+    "popcorn": {"category": "Snacks", "price": 50, "description": "Crispy and buttery classic popcorn."},
+    "chips": {"category": "Snacks", "price": 30, "description": "Crispy salted potato chips."},
+    "cookies": {"category": "Snacks", "price": 45, "description": "Delicious chocolate chip cookies."},
+    "soap": {"category": "Personal Care", "price": 40, "description": "Gentle moisturizing bathing soap."},
+    "shampoo": {"category": "Personal Care", "price": 130, "description": "Nourishing herbal hair shampoo."},
+    "toothpaste": {"category": "Personal Care", "price": 65, "description": "Cavity protection fluoride toothpaste."},
+    "detergent": {"category": "Household", "price": 140, "description": "High-efficiency laundry washing powder."},
+}
+
+
+def _search_image(query: str) -> str:
+    import html
+    query_encoded = urllib.parse.quote(query + " product")
+    url = f"https://www.bing.com/images/search?q={query_encoded}"
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            resp_html = response.read().decode('utf-8', errors='ignore')
+            decoded_html = html.unescape(resp_html)
+            matches = re.findall(r'"murl"\s*:\s*"([^"]+)"', decoded_html)
+            if matches:
+                return matches[0]
+    except Exception as e:
+        print(f"Telegram Bot error searching image: {e}")
+    return ""
+
 
 def _text(value: Any, fallback: str = "Not set") -> str:
     if value is None:
@@ -110,6 +171,75 @@ def build_project_reply(message: str, db: Database) -> str:
             "Hi. I can answer questions about your Grocery Inventory System.\n\n"
             "Try: project details, stock summary, low stock, out of stock, find milk, shops, distributors, owners, invoices."
         )
+
+    if lower.startswith("add ") or lower.startswith("create "):
+        is_other_entity = any(
+            x in lower
+            for x in ["shop", "store", "distributor", "supplier", "owner", "invoice", "bill"]
+        )
+        if not is_other_entity:
+            name_part = re.sub(
+                r'^(?:add|create)\s+(?:a\s+|new\s+)?(?:product|item)?\s*',
+                '',
+                command,
+                flags=re.IGNORECASE
+            )
+            
+            def get_number(key):
+                m = re.search(rf'\b(?:{key})\s+(\d+(?:\.\d+)?)', lower)
+                return int(float(m.group(1))) if m else None
+                
+            quantity = get_number("quantity|qty") or 50
+            price = get_number("price|rate")
+            
+            cat_match = re.search(r'\bcategory\s+([a-z &]+?)(?:\s+(?:quantity|qty|price|rate|description)\b|$)', lower)
+            category = cat_match.group(1).strip().title() if cat_match else None
+            
+            desc_match = re.search(r'\bdescription\s+(.+)$', command, re.IGNORECASE)
+            description = desc_match.group(1).strip() if desc_match else None
+            
+            name_clean = re.split(r'\s+(?:quantity|qty|price|rate|category|description)\b', name_part, flags=re.IGNORECASE)[0].strip()
+            
+            if name_clean:
+                cat_lower = name_clean.lower()
+                catalog_item = None
+                for key, val in GROCERY_CATALOG.items():
+                    if key in cat_lower or cat_lower in key:
+                        catalog_item = val
+                        break
+                        
+                final_name = name_clean.title()
+                final_category = category or (catalog_item["category"] if catalog_item else "Pantry")
+                final_price = price if price is not None else (catalog_item["price"] if catalog_item else 50)
+                final_description = description or (catalog_item["description"] if catalog_item else f"Premium {final_name}, sourced fresh for our inventory.")
+                
+                image_url = _search_image(final_name)
+                
+                item_dict = {
+                    "name": final_name,
+                    "description": final_description,
+                    "category": final_category,
+                    "quantity": quantity,
+                    "price": final_price,
+                    "image": image_url,
+                    "owner_email": "kskushal123456@gmail.com"
+                }
+                
+                db["items"].insert_one(item_dict)
+                
+                reply_lines = [
+                    f"🎉 Successfully created product '{final_name}'!",
+                    f"- Category: {final_category}",
+                    f"- Quantity: {quantity}",
+                    f"- Price: Rs. {final_price}",
+                    f"- Description: {final_description}"
+                ]
+                if image_url:
+                    reply_lines.append(f"- Image Link: {image_url}")
+                else:
+                    reply_lines.append("- Image: No image found on search.")
+                    
+                return "\n".join(reply_lines)
 
     if "project" in lower or "details" in lower or "what can you do" in lower:
         return _project_summary(db)

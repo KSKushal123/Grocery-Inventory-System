@@ -53,11 +53,53 @@ const clickCommandAliases = [
   },
 ];
 
-function createMessage(role, text) {
+const GROCERY_CATALOG = {
+  milk: { category: 'Dairy', price: 60, description: 'Fresh, nutritious farm whole milk.' },
+  bread: { category: 'Bakery', price: 40, description: 'Soft, freshly baked sliced white bread.' },
+  egg: { category: 'Dairy', price: 6, description: 'High-protein farm fresh organic eggs.' },
+  eggs: { category: 'Dairy', price: 60, description: 'High-protein farm fresh organic eggs (pack of 10).' },
+  butter: { category: 'Dairy', price: 55, description: 'Rich and creamy salted butter.' },
+  cheese: { category: 'Dairy', price: 120, description: 'Premium cheddar cheese slices.' },
+  rice: { category: 'Pantry', price: 80, description: 'Premium long-grain Basmati rice.' },
+  wheat: { category: 'Pantry', price: 45, description: 'Whole wheat flour (Atta) for healthy chapatis.' },
+  flour: { category: 'Pantry', price: 45, description: 'Premium quality all-purpose flour.' },
+  sugar: { category: 'Pantry', price: 50, description: 'Fine refined white sugar.' },
+  salt: { category: 'Pantry', price: 20, description: 'Iodized cooking salt.' },
+  oil: { category: 'Pantry', price: 150, description: 'Healthy refined sunflower cooking oil.' },
+  tea: { category: 'Beverages', price: 90, description: 'Premium aromatic black tea leaves.' },
+  coffee: { category: 'Beverages', price: 180, description: 'Rich and aromatic instant coffee powder.' },
+  juice: { category: 'Beverages', price: 110, description: '100% pure and refreshing fruit juice.' },
+  water: { category: 'Beverages', price: 20, description: 'Pure mineral drinking water bottle.' },
+  apple: { category: 'Produce', price: 160, description: 'Crisp and sweet fresh red apples.' },
+  apples: { category: 'Produce', price: 160, description: 'Crisp and sweet fresh red apples.' },
+  banana: { category: 'Produce', price: 60, description: 'Fresh and sweet yellow bananas.' },
+  bananas: { category: 'Produce', price: 60, description: 'Fresh and sweet yellow bananas.' },
+  potato: { category: 'Produce', price: 30, description: 'Fresh organic farm potatoes.' },
+  potatoes: { category: 'Produce', price: 30, description: 'Fresh organic farm potatoes.' },
+  tomato: { category: 'Produce', price: 40, description: 'Fresh, juicy red tomatoes.' },
+  tomatoes: { category: 'Produce', price: 40, description: 'Fresh, juicy red tomatoes.' },
+  onion: { category: 'Produce', price: 35, description: 'Fresh, pungent red onions.' },
+  onions: { category: 'Produce', price: 35, description: 'Fresh, pungent red onions.' },
+  garlic: { category: 'Produce', price: 120, description: 'Fresh and aromatic garlic bulbs.' },
+  ginger: { category: 'Produce', price: 100, description: 'Fresh spicy ginger root.' },
+  chicken: { category: 'Meat & Seafood', price: 220, description: 'Freshly cut, tender skinless chicken.' },
+  fish: { category: 'Meat & Seafood', price: 350, description: 'Freshly caught river fish.' },
+  mutton: { category: 'Meat & Seafood', price: 700, description: 'Tender and juicy fresh mutton cuts.' },
+  popcorn: { category: 'Snacks', price: 50, description: 'Crispy and buttery classic popcorn.' },
+  chips: { category: 'Snacks', price: 30, description: 'Crispy salted potato chips.' },
+  cookies: { category: 'Snacks', price: 45, description: 'Delicious chocolate chip cookies.' },
+  soap: { category: 'Personal Care', price: 40, description: 'Gentle moisturizing bathing soap.' },
+  shampoo: { category: 'Personal Care', price: 130, description: 'Nourishing herbal hair shampoo.' },
+  toothpaste: { category: 'Personal Care', price: 65, description: 'Cavity protection fluoride toothpaste.' },
+  detergent: { category: 'Household', price: 140, description: 'High-efficiency laundry washing powder.' },
+};
+
+function createMessage(role, text, image = null) {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     role,
     text,
+    image,
   };
 }
 
@@ -128,20 +170,37 @@ function valueAfter(text, key, stopWords) {
 }
 
 function extractProductPayload(command) {
-  const quantity = numberAfter(command, 'quantity|qty') ?? 1;
-  const price = numberAfter(command, 'price|rate') ?? 0;
+  const parsedQty = numberAfter(command, 'quantity|qty');
+  const quantity = parsedQty !== null ? parsedQty : 50;
+  const parsedPrice = numberAfter(command, 'price|rate');
   const categoryMatch = command.match(/\bcategory\s+([a-z &]+?)(?:\s+(?:quantity|qty|price|rate|description)\b|$)/i);
   const descriptionMatch = command.match(/\bdescription\s+(.+)$/i);
-  const nameMatch = command.match(/(?:add|create)\s+(?:a\s+|new\s+)?(?:product|item)\s+(.+?)(?:\s+(?:quantity|qty|price|rate|category|description)\b|$)/i);
+  const nameMatch = command.match(/(?:add|create)\s+(?:a\s+|new\s+)?(?:product|item)?\s*(.+?)(?:\s+(?:quantity|qty|price|rate|category|description)\b|$)/i);
 
   if (!nameMatch?.[1]?.trim()) return null;
 
+  const cleanName = nameMatch[1].trim();
+  const normalizedName = cleanName.toLowerCase();
+  
+  let catalogItem = null;
+  for (const [key, val] of Object.entries(GROCERY_CATALOG)) {
+    if (normalizedName.includes(key) || key.includes(normalizedName)) {
+      catalogItem = val;
+      break;
+    }
+  }
+
+  const finalName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+  const finalCategory = categoryMatch?.[1]?.trim() || catalogItem?.category || 'Pantry';
+  const finalPrice = parsedPrice !== null ? parsedPrice : (catalogItem?.price || 50);
+  const finalDescription = descriptionMatch?.[1]?.trim() || catalogItem?.description || `Premium ${finalName}, sourced fresh for our inventory.`;
+
   return {
-    name: nameMatch[1].trim(),
-    description: descriptionMatch?.[1]?.trim() || '',
-    category: categoryMatch?.[1]?.trim() || 'Other',
+    name: finalName,
+    description: finalDescription,
+    category: finalCategory,
     quantity,
-    price,
+    price: finalPrice,
     image: '',
   };
 }
@@ -248,8 +307,8 @@ function AIBot() {
     window.speechSynthesis.speak(utterance);
   }, [isSpeaking]);
 
-  const addBotMessage = useCallback((text) => {
-    setMessages(prev => [...prev, createMessage('bot', text)]);
+  const addBotMessage = useCallback((text, image = null) => {
+    setMessages(prev => [...prev, createMessage('bot', text, image)]);
     speak(text);
   }, [speak]);
 
@@ -400,16 +459,37 @@ function AIBot() {
         return;
       }
 
-      if (/\b(add|create)\b.*\b(product|item)\b/.test(lower)) {
+      const isAddProduct = (lower.startsWith('add ') || lower.startsWith('create ')) && 
+                           !['shop', 'store', 'distributor', 'supplier', 'owner', 'invoice', 'bill'].some(x => lower.includes(x));
+
+      if (isAddProduct) {
         const payload = extractProductPayload(command);
         if (!payload) {
           addBotMessage('Please say it like: add product rice quantity 20 price 55 category Pantry.');
           return;
         }
+        
+        let imageUrl = '';
+        try {
+          const imgResponse = await api.searchImage(payload.name);
+          imageUrl = imgResponse.data?.image_url || '';
+        } catch (err) {
+          console.error('Failed to fetch image:', err);
+        }
+        
+        payload.image = imageUrl;
+        
         await api.createItem(payload);
         refreshInventory();
         goTo('/');
-        addBotMessage(`Created product ${payload.name} with quantity ${payload.quantity} and price ₹${payload.price}.`);
+        
+        const successMsg = `Successfully created product "${payload.name}"!\n` +
+          `- Category: ${payload.category}\n` +
+          `- Quantity: ${payload.quantity}\n` +
+          `- Price: ₹${payload.price}\n` +
+          `- Description: ${payload.description}`;
+          
+        addBotMessage(successMsg, imageUrl);
         return;
       }
 
@@ -525,7 +605,24 @@ function AIBot() {
           <div className="ai-bot-messages">
             {messages.map(message => (
               <div key={message.id} className={`ai-bot-message ${message.role}`}>
-                {message.text}
+                <div style={{ whiteSpace: 'pre-line' }}>{message.text}</div>
+                {message.image && (
+                  <div className="ai-bot-message-image" style={{ marginTop: '8px' }}>
+                    <img 
+                      src={message.image} 
+                      alt="Product" 
+                      style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '6px', objectFit: 'cover', display: 'block', border: '1px solid #cbd5e1' }} 
+                    />
+                    <a 
+                      href={message.image} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      style={{ fontSize: '0.75rem', color: '#3b82f6', textDecoration: 'underline', display: 'inline-block', marginTop: '4px', fontWeight: '500' }}
+                    >
+                      View direct image link
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
             {isThinking && (
