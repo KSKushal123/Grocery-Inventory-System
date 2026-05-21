@@ -51,7 +51,8 @@ function Shops() {
       setEditingId(null);
     } catch (error) {
       console.error("Error saving shop:", error);
-      alert("Failed to save shop details. Please try again.");
+      const errMsg = error.response?.data?.detail || "Failed to save shop details. Please try again.";
+      alert(errMsg);
     }
   };
 

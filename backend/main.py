@@ -100,6 +100,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         email: str = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid token: missing email")
+        email = email.strip().lower()
     except JWTError:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
         
@@ -119,12 +120,14 @@ def create_item(item: schemas.ItemCreate, db: Database = Depends(get_db), curren
 
 @app.post("/auth/register", response_model=schemas.Token)
 def register(user: schemas.UserCreate, db: Database = Depends(get_db)):
+    user.email = user.email.strip().lower()
     existing_user = db["users"].find_one({"email": user.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_password = auth.get_password_hash(user.password)
     user_dict = user.model_dump()
+    user_dict["email"] = user.email
     user_dict["hashed_password"] = hashed_password
     del user_dict["password"]
     
@@ -151,6 +154,7 @@ def register(user: schemas.UserCreate, db: Database = Depends(get_db)):
 
 @app.post("/auth/login", response_model=schemas.Token)
 def login(user: schemas.UserLogin, db: Database = Depends(get_db)):
+    user.email = user.email.strip().lower()
     db_user = db["users"].find_one({"email": user.email})
     if not db_user or not auth.verify_password(user.password, db_user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
@@ -189,11 +193,11 @@ def google_auth(request_data: schemas.GoogleLoginRequest, db: Database = Depends
 
     # Ensure the token has an email
     email = google_info.get("email")
-    name = google_info.get("name", email.split("@")[0] if email else "Google User")
-    
     if not email:
         raise HTTPException(status_code=400, detail="Google token does not contain email")
-        
+    email = email.strip().lower()
+    name = google_info.get("name", email.split("@")[0])
+    
     # Check if user already exists
     db_user = db["users"].find_one({"email": email})
     
@@ -329,12 +333,24 @@ def update_shop(shop_id: str, shop: schemas.ShopCreate, db: Database = Depends(g
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid ID format")
     
+    # Diagnostics: Fetch the shop to see who owns it
+    existing_shop = db["shops"].find_one({"_id": obj_id})
+    if not existing_shop:
+        raise HTTPException(status_code=404, detail=f"Shop with ID {shop_id} does not exist in the database.")
+    
+    actual_owner = existing_shop.get("owner_email") or ""
+    if actual_owner.lower() != current_user.email.lower():
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Permission denied. This shop belongs to '{actual_owner}', but you are logged in as '{current_user.email}'."
+        )
+    
     update_data = shop.model_dump()
-    update_data["owner_email"] = current_user.email
-    result = db["shops"].update_one({"_id": obj_id, "owner_email": current_user.email}, {"$set": update_data})
+    update_data["owner_email"] = current_user.email.lower()
+    result = db["shops"].update_one({"_id": obj_id, "owner_email": actual_owner}, {"$set": update_data})
     
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Shop not found")
+        raise HTTPException(status_code=404, detail="Failed to update shop: document not matched.")
         
     updated_shop = db["shops"].find_one({"_id": obj_id})
     return fix_id(updated_shop)
